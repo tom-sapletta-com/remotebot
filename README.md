@@ -61,15 +61,16 @@ make list-cv-tests
 
 ### 📚 Dokumentacja (Przeczytaj w tej kolejności)
 1. **[START_HERE.md](START_HERE.md)** ⭐ - Zacznij tu! (3 min)
-2. **[AI_VS_CV_COMPARISON.md](AI_VS_CV_COMPARISON.md)** 📊 - Rzeczywiste porównanie (60s vs <1s!)
-3. **[CV_DETECTION_GUIDE.md](CV_DETECTION_GUIDE.md)** ⚡ - CV Detection (100x szybsze!)
-4. **[AUTO_LOGIN_GUIDE.md](AUTO_LOGIN_GUIDE.md)** 🔐 - Auto-Login (wykrywanie i wypełnianie)
-5. **[FINAL_SUMMARY.md](FINAL_SUMMARY.md)** 🎯 - Finalne podsumowanie + AI limitations
-6. **[WORKING_TESTS_GUIDE.md](WORKING_TESTS_GUIDE.md)** - Co naprawdę działa
-7. **[TEST_RESULTS_SUMMARY.md](TEST_RESULTS_SUMMARY.md)** - Wyniki testów
-8. [HYBRID_TESTS_README.md](HYBRID_TESTS_README.md) - Hybrid approach (teoria)
-9. [AI_TESTS_QUICK_START.md](AI_TESTS_QUICK_START.md) - Quick start guide
-10. [docs/AI_TESTS.md](docs/AI_TESTS.md) - Pełna dokumentacja (teoria)
+2. **[DIAGNOSTICS_GUIDE.md](DIAGNOSTICS_GUIDE.md)** 🔍 - Rozwiązywanie problemów (VNC, lock screen)
+3. **[AI_VS_CV_COMPARISON.md](AI_VS_CV_COMPARISON.md)** 📊 - Rzeczywiste porównanie (60s vs <1s!)
+4. **[CV_DETECTION_GUIDE.md](CV_DETECTION_GUIDE.md)** ⚡ - CV Detection (100x szybsze!)
+5. **[AUTO_LOGIN_GUIDE.md](AUTO_LOGIN_GUIDE.md)** 🔐 - Auto-Login (wykrywanie i wypełnianie)
+6. **[FINAL_SUMMARY.md](FINAL_SUMMARY.md)** 🎯 - Finalne podsumowanie + AI limitations
+7. **[WORKING_TESTS_GUIDE.md](WORKING_TESTS_GUIDE.md)** - Co naprawdę działa
+8. **[TEST_RESULTS_SUMMARY.md](TEST_RESULTS_SUMMARY.md)** - Wyniki testów
+9. [HYBRID_TESTS_README.md](HYBRID_TESTS_README.md) - Hybrid approach (teoria)
+10. [AI_TESTS_QUICK_START.md](AI_TESTS_QUICK_START.md) - Quick start guide
+11. [docs/AI_TESTS.md](docs/AI_TESTS.md) - Pełna dokumentacja (teoria)
 
 ### 🎓 Co Działa vs Co Nie (Rzeczywiste Testy)
 | Test | Status | Czas | Metoda |
