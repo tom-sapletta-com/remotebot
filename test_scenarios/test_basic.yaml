@@ -1,0 +1,74 @@
+# test_scenarios/test_basic.yaml - Podstawowe testy automatyzacji
+
+# Konfiguracja połączenia
+connection:
+  protocol: vnc
+  host: vnc-desktop
+  port: 5901
+  username: ""
+  password: automation
+
+# Konfiguracja Ollama
+ollama:
+  url: http://ollama:11434
+  model: llava:7b
+
+# Scenariusze testowe
+scenarios:
+  
+  # Test podstawowy - połączenie i rozłączenie
+  test_connection:
+    - action: connect
+    - action: wait
+      seconds: 2
+    - action: analyze
+      question: "What desktop environment or operating system is visible on the screen?"
+      save_to: desktop_info
+    - action: disconnect
+
+  # Test Firefox
+  test_firefox:
+    - action: connect
+    - action: wait
+      seconds: 2
+    - action: find_and_click
+      element: "Firefox browser icon on desktop or taskbar"
+    - action: wait
+      seconds: 4
+    - action: verify
+      expected: "Firefox browser window is open"
+    - action: key
+      key: ctrl+l
+    - action: type
+      text: "https://example.com"
+    - action: key
+      key: enter
+    - action: wait
+      seconds: 3
+    - action: verify
+      expected: "Example Domain page is loaded"
+    - action: disconnect
+
+  # Test terminala
+  test_terminal:
+    - action: connect
+    - action: wait
+      seconds: 2
+    - action: find_and_click
+      element: "terminal or console application"
+    - action: wait
+      seconds: 2
+    - action: type
+      text: "echo 'Hello from automation test'"
+    - action: key
+      key: enter
+    - action: wait
+      seconds: 1
+    - action: analyze
+      question: "What text output is shown in the terminal?"
+      save_to: terminal_output
+    - action: type
+      text: "exit"
+    - action: key
+      key: enter
+    - action: disconnect

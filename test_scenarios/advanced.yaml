@@ -1,0 +1,649 @@
+# Zaawansowane scenariusze testowe dla Remote Automation
+
+connection:
+  protocol: vnc
+  host: vnc-desktop
+  port: 5901
+  password: automation
+
+ollama:
+  url: http://ollama:11434
+  model: llava:7b
+
+scenarios:
+  # ===================================
+  # E-Commerce: Test zakupowy
+  # ===================================
+  ecommerce_purchase_flow:
+    - action: connect
+    
+    - action: find_and_click
+      element: "Firefox browser"
+    
+    - action: wait
+      seconds: 3
+    
+    - action: key
+      key: ctrl+l
+    
+    - action: type
+      text: "https://demo.opencart.com"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 5
+    
+    - action: verify
+      expected: "OpenCart demo store homepage is loaded"
+    
+    - action: find_and_click
+      element: "search box or search icon"
+    
+    - action: type
+      text: "laptop"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 3
+    
+    - action: analyze
+      question: "How many laptop products are shown in the search results?"
+      save_to: product_count
+    
+    - action: find_and_click
+      element: "first product in search results"
+    
+    - action: wait
+      seconds: 2
+    
+    - action: verify
+      expected: "product detail page is displayed"
+    
+    - action: analyze
+      question: "What is the product name and price displayed?"
+      save_to: product_details
+    
+    - action: find_and_click
+      element: "add to cart button"
+    
+    - action: wait
+      seconds: 2
+    
+    - action: verify
+      expected: "success message or cart confirmation appears"
+    
+    - action: disconnect
+
+  # ===================================
+  # Formularze: Wypełnianie wielostronicowe
+  # ===================================
+  multi_step_form:
+    - action: connect
+    
+    - action: find_and_click
+      element: "Firefox browser"
+    
+    - action: wait
+      seconds: 2
+    
+    - action: type
+      text: "file:///home/automation/test_files/test.html"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 2
+    
+    # Krok 1: Dane osobowe
+    - action: find_and_click
+      element: "text input field"
+    
+    - action: type
+      text: "Jan Kowalski"
+    
+    - action: key
+      key: tab
+    
+    - action: type
+      text: "jan.kowalski@example.com"
+    
+    - action: key
+      key: tab
+    
+    - action: type
+      text: "+48123456789"
+    
+    - action: wait
+      seconds: 1
+    
+    - action: verify
+      expected: "form fields contain entered data"
+    
+    - action: analyze
+      question: "Are all three fields filled correctly? Check name, email and phone."
+      save_to: form_validation
+    
+    - action: disconnect
+
+  # ===================================
+  # System Monitoring: Dashboard
+  # ===================================
+  system_dashboard_check:
+    - action: connect
+    
+    - action: find_and_click
+      element: "Terminal"
+    
+    - action: wait
+      seconds: 2
+    
+    # CPU usage
+    - action: type
+      text: "top -bn1 | grep 'Cpu(s)' | awk '{print $2}'"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 1
+    
+    - action: analyze
+      question: "What is the CPU usage percentage shown?"
+      save_to: cpu_usage
+    
+    # Memory usage
+    - action: type
+      text: "free -h | grep Mem | awk '{print $3\"/\"$2}'"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 1
+    
+    - action: analyze
+      question: "What is the memory usage shown?"
+      save_to: memory_usage
+    
+    # Disk usage
+    - action: type
+      text: "df -h / | tail -1 | awk '{print $5}'"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 1
+    
+    - action: analyze
+      question: "What is the disk usage percentage?"
+      save_to: disk_usage
+    
+    # Running processes count
+    - action: type
+      text: "ps aux | wc -l"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 1
+    
+    - action: analyze
+      question: "How many processes are running?"
+      save_to: process_count
+    
+    - action: disconnect
+
+  # ===================================
+  # Web Scraping: Data Extraction
+  # ===================================
+  web_data_extraction:
+    - action: connect
+    
+    - action: find_and_click
+      element: "Firefox"
+    
+    - action: wait
+      seconds: 3
+    
+    - action: type
+      text: "https://quotes.toscrape.com"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 3
+    
+    - action: verify
+      expected: "quotes website is loaded with multiple quotes"
+    
+    - action: analyze
+      question: "Extract the first 3 quotes from the page. List them as: 1. quote text - author"
+      save_to: extracted_quotes
+    
+    - action: analyze
+      question: "What tags or categories are visible on the right sidebar?"
+      save_to: categories
+    
+    - action: find_and_click
+      element: "Next button or page 2 link"
+    
+    - action: wait
+      seconds: 2
+    
+    - action: verify
+      expected: "page 2 is loaded"
+    
+    - action: analyze
+      question: "Extract the first quote from page 2"
+      save_to: page2_quote
+    
+    - action: disconnect
+
+  # ===================================
+  # Accessibility Test
+  # ===================================
+  accessibility_check:
+    - action: connect
+    
+    - action: find_and_click
+      element: "Firefox"
+    
+    - action: wait
+      seconds: 3
+    
+    - action: type
+      text: "https://www.example.com"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 3
+    
+    - action: analyze
+      question: "Check accessibility: Is there good color contrast? Are headings properly structured? Is text readable?"
+      save_to: accessibility_report
+    
+    # Test keyboard navigation
+    - action: key
+      key: tab
+    
+    - action: wait
+      seconds: 1
+    
+    - action: analyze
+      question: "Is there a visible focus indicator when tabbing through elements?"
+      save_to: keyboard_nav_check
+    
+    # Test with increased zoom
+    - action: key
+      key: ctrl+plus
+    
+    - action: key
+      key: ctrl+plus
+    
+    - action: wait
+      seconds: 1
+    
+    - action: analyze
+      question: "Does the page layout remain functional at 150% zoom? Is text still readable?"
+      save_to: zoom_test
+    
+    - action: disconnect
+
+  # ===================================
+  # Application Stress Test
+  # ===================================
+  browser_stress_test:
+    - action: connect
+    
+    - action: find_and_click
+      element: "Firefox"
+    
+    - action: wait
+      seconds: 2
+    
+    # Otwórz wiele zakładek
+    - action: type
+      text: "https://example.com"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 2
+    
+    - action: key
+      key: ctrl+t
+    
+    - action: type
+      text: "https://wikipedia.org"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 2
+    
+    - action: key
+      key: ctrl+t
+    
+    - action: type
+      text: "https://github.com"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 2
+    
+    - action: analyze
+      question: "Are all three tabs loaded successfully? Is the browser responsive?"
+      save_to: browser_performance
+    
+    # Przełączaj między zakładkami
+    - action: key
+      key: ctrl+1
+    
+    - action: wait
+      seconds: 1
+    
+    - action: key
+      key: ctrl+2
+    
+    - action: wait
+      seconds: 1
+    
+    - action: key
+      key: ctrl+3
+    
+    - action: wait
+      seconds: 1
+    
+    - action: verify
+      expected: "browser is still responsive after opening multiple tabs"
+    
+    - action: disconnect
+
+  # ===================================
+  # Document Processing
+  # ===================================
+  document_viewer_test:
+    - action: connect
+    
+    - action: find_and_click
+      element: "File Manager or Thunar"
+    
+    - action: wait
+      seconds: 2
+    
+    - action: find_and_click
+      element: "Documents folder"
+    
+    - action: wait
+      seconds: 1
+    
+    - action: find_and_click
+      element: "test.txt file"
+    
+    - action: wait
+      seconds: 2
+    
+    - action: analyze
+      question: "What are the contents of the test.txt file? Summarize the text."
+      save_to: document_content
+    
+    - action: verify
+      expected: "document is opened and readable"
+    
+    - action: disconnect
+
+  # ===================================
+  # Error Handling & Recovery
+  # ===================================
+  error_recovery_test:
+    - action: connect
+    
+    - action: find_and_click
+      element: "Terminal"
+    
+    - action: wait
+      seconds: 2
+    
+    # Wykonaj komendę która nie istnieje
+    - action: type
+      text: "nonexistent_command_xyz"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 1
+    
+    - action: analyze
+      question: "Is there an error message? What does it say?"
+      save_to: error_message
+    
+    # Sprawdź czy terminal nadal działa
+    - action: type
+      text: "echo 'Terminal still works'"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 1
+    
+    - action: verify
+      expected: "terminal displays 'Terminal still works'"
+    
+    - action: disconnect
+
+  # ===================================
+  # Performance Benchmark
+  # ===================================
+  performance_test:
+    - action: connect
+    
+    - action: find_and_click
+      element: "Terminal"
+    
+    - action: wait
+      seconds: 2
+    
+    # Test szybkości dysku
+    - action: type
+      text: "dd if=/dev/zero of=/tmp/test bs=1M count=100 2>&1 | grep copied"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 3
+    
+    - action: analyze
+      question: "What is the disk write speed reported?"
+      save_to: disk_speed
+    
+    # Test CPU
+    - action: type
+      text: "time echo 'scale=1000; 4*a(1)' | bc -l > /dev/null"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 5
+    
+    - action: analyze
+      question: "What was the execution time?"
+      save_to: cpu_benchmark
+    
+    - action: disconnect
+
+  # ===================================
+  # Screenshot Comparison
+  # ===================================
+  visual_regression_test:
+    - action: connect
+    
+    - action: find_and_click
+      element: "Firefox"
+    
+    - action: wait
+      seconds: 3
+    
+    - action: type
+      text: "https://example.com"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 3
+    
+    - action: analyze
+      question: "Describe the visual layout: header, main content, footer. What colors are used?"
+      save_to: layout_baseline
+    
+    # Zmień rozmiar okna
+    - action: key
+      key: F11
+    
+    - action: wait
+      seconds: 2
+    
+    - action: analyze
+      question: "How did the layout change in fullscreen mode?"
+      save_to: layout_fullscreen
+    
+    - action: key
+      key: F11
+    
+    - action: disconnect
+
+  # ===================================
+  # API Testing through Browser Console
+  # ===================================
+  browser_api_test:
+    - action: connect
+    
+    - action: find_and_click
+      element: "Firefox"
+    
+    - action: wait
+      seconds: 2
+    
+    # Otwórz developer console
+    - action: key
+      key: F12
+    
+    - action: wait
+      seconds: 2
+    
+    - action: find_and_click
+      element: "Console tab in developer tools"
+    
+    - action: type
+      text: "fetch('https://api.github.com/users/github').then(r=>r.json()).then(d=>console.log(d.name))"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 3
+    
+    - action: analyze
+      question: "What was the API response? Was it successful?"
+      save_to: api_response
+    
+    - action: disconnect
+
+  # ===================================
+  # Workflow Automation: Complete Task
+  # ===================================
+  complete_workflow:
+    - action: connect
+    
+    # Krok 1: Otwórz terminal i sprawdź system
+    - action: find_and_click
+      element: "Terminal"
+    
+    - action: wait
+      seconds: 2
+    
+    - action: type
+      text: "uname -a && date"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 1
+    
+    - action: analyze
+      question: "What system and date information is shown?"
+      save_to: system_info
+    
+    # Krok 2: Utwórz plik
+    - action: type
+      text: "echo 'Automated test report' > /tmp/report.txt"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 1
+    
+    # Krok 3: Otwórz plik w edytorze
+    - action: type
+      text: "mousepad /tmp/report.txt &"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 3
+    
+    - action: verify
+      expected: "text editor is open with report.txt"
+    
+    # Krok 4: Dodaj treść
+    - action: type
+      text: "Test completed successfully on "
+    
+    - action: key
+      key: ctrl+s
+    
+    - action: wait
+      seconds: 1
+    
+    # Krok 5: Zamknij edytor
+    - action: key
+      key: alt+F4
+    
+    - action: wait
+      seconds: 1
+    
+    # Krok 6: Weryfikacja
+    - action: type
+      text: "cat /tmp/report.txt"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 1
+    
+    - action: verify
+      expected: "report content is displayed correctly"
+    
+    - action: disconnect

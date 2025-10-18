@@ -1,5 +1,158 @@
 .idea
 venv
+
+# Remote Automation - .gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Docker
+docker-compose.override.yml
+.env
+
+# Results and Logs
+results/
+logs/
+debug_screenshots/
+*.log
+*.jsonl
+
+# Backups
+backups/
+*.tar.gz
+*.zip
+
+# Test outputs
+.pytest_cache/
+.coverage
+htmlcov/
+*.html
+*.xml
+
+# Temporary files
+temp_screen.png
+debug.png
+temp/
+tmp/
+
+# OS specific
+Thumbs.db
+.DS_Store
+*.bak
+
+# Shared directory contents (tylko struktura, nie zawartość)
+shared/*
+!shared/.gitkeep
+
+# Local configuration
+config.local.yaml
+.env.local
+
+# Build artifacts
+*.tar
+*.img
+
+# Documentation builds
+docs_output/
+site/
+
+# Node (jeśli będzie web UI)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Monitoring data
+monitoring_results.jsonl
+batch_results.csv
+
+# VNC screenshots
+*.png
+!docs/*.png
+
+# Editor configs
+*.sublime-project
+*.sublime-workspace
+
+# Database files (jeśli będą)
+*.db
+*.sqlite
+*.sqlite3
+
+# Credentials (nigdy nie commituj!)
+credentials.json
+secrets.yaml
+*.pem
+*.key
+
+# Large files
+*.mp4
+*.avi
+*.mov
+
+# Coverage
+.coverage.*
+coverage.xml
+
+# Profiling
+*.prof
+*.lprof
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pytest
+.pytest_cache/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+*.ipynb
+
+# Local test files
+test_local_*
+local_*
+
+# Docker volumes data (jeśli zamontowane lokalnie)
+ollama-data/
+portainer-data/
+
 # Logs
 logs
 *.log

@@ -57,7 +57,7 @@ services:
   automation-controller:
     build:
       context: controller
-      dockerfile: Dockerfile.controller
+      dockerfile: Dockerfile
     container_name: automation-controller
     depends_on:
       - vnc-desktop
