@@ -63,10 +63,22 @@ class OllamaVision:
     
     def find_element(self, image: Image.Image, element_desc: str) -> Optional[Dict]:
         """Znajduje element na ekranie i zwraca współrzędne"""
-        prompt = f"""Analyze this screenshot and find: {element_desc}
-Return ONLY a JSON object with coordinates:
-{{"found": true/false, "x": pixel_x, "y": pixel_y, "confidence": 0-100}}
-If not found, return {{"found": false}}"""
+        width, height = image.size
+        
+        # Pierwsza próba - dokładne współrzędne
+        prompt = f"""Analyze this screenshot (size: {width}x{height} pixels) and locate: {element_desc}
+
+Look carefully at the entire screen. If you can see this element, estimate its center position in pixels.
+
+Respond ONLY with JSON format:
+{{"found": true, "x": <pixel_x>, "y": <pixel_y>, "confidence": <0-100>}}
+
+If not visible, respond:
+{{"found": false}}
+
+Example responses:
+{{"found": true, "x": 150, "y": 80, "confidence": 90}}
+{{"found": false}}"""
         
         response = self.analyze_screen(image, prompt)
         
@@ -74,9 +86,39 @@ If not found, return {{"found": false}}"""
         try:
             json_match = re.search(r'\{[^}]+\}', response)
             if json_match:
-                return json.loads(json_match.group())
+                result = json.loads(json_match.group())
+                if result.get('found'):
+                    return result
         except:
             pass
+        
+        # Druga próba - użyj opisu pozycji jeśli nie znaleziono dokładnych współrzędnych
+        prompt2 = f"""Look at this screenshot. Can you see: {element_desc}?
+
+Answer with ONLY:
+- "TOP-LEFT" if it's in the top-left quarter
+- "TOP-RIGHT" if it's in the top-right quarter  
+- "BOTTOM-LEFT" if it's in the bottom-left quarter
+- "BOTTOM-RIGHT" if it's in the bottom-right quarter
+- "CENTER" if it's in the center
+- "NOT-FOUND" if you cannot see it
+
+One word only."""
+        
+        response2 = self.analyze_screen(image, prompt2).strip().upper()
+        
+        # Mapuj pozycje na współrzędne
+        position_map = {
+            'TOP-LEFT': (width // 4, height // 4),
+            'TOP-RIGHT': (3 * width // 4, height // 4),
+            'BOTTOM-LEFT': (width // 4, 3 * height // 4),
+            'BOTTOM-RIGHT': (3 * width // 4, 3 * height // 4),
+            'CENTER': (width // 2, height // 2),
+        }
+        
+        for pos_name, (x, y) in position_map.items():
+            if pos_name in response2:
+                return {"found": True, "x": x, "y": y, "confidence": 60}
         
         return {"found": False}
 
@@ -218,8 +260,12 @@ class AutomationEngine:
             try:
                 from screen_recorder import ScreenRecorder
                 self.recorder = ScreenRecorder()
-            except ImportError:
-                print("⚠️  screen_recorder nie jest dostępny, nagrywanie wyłączone")
+            except ImportError as e:
+                print(f"⚠️  screen_recorder nie jest dostępny (brak cv2?), nagrywanie wyłączone")
+                print(f"   Błąd importu: {e}")
+                self.enable_recording = False
+            except Exception as e:
+                print(f"⚠️  Błąd inicjalizacji screen_recorder: {e}")
                 self.enable_recording = False
     
     def execute_dsl(self, script: List[Dict], scenario_name: str = "test"):
@@ -250,18 +296,49 @@ class AutomationEngine:
                 elif action == 'find_and_click':
                     element = step.get('element')
                     screen = self.controller.capture_screen()
+                    print(f"  Searching for: {element}")
+                    print(f"  Screen size: {screen.size}")
+                    
                     result = self.vision.find_element(screen, element)
                     
                     if result.get('found'):
                         x, y = result['x'], result['y']
-                        print(f"  Found at ({x}, {y})")
+                        confidence = result.get('confidence', 'unknown')
+                        print(f"  ✓ Found at ({x}, {y}) - confidence: {confidence}")
                         self.controller.click(x, y)
                     else:
                         print(f"  ✗ Element not found: {element}")
+                        print(f"  Tip: Check if the element is visible on screen")
                 
                 elif action == 'click':
                     x, y = step.get('x'), step.get('y')
                     self.controller.click(x, y)
+                
+                elif action == 'click_position':
+                    # Kliknij w opisaną pozycję (np. "top-left", "center")
+                    screen = self.controller.capture_screen()
+                    width, height = screen.size
+                    position = step.get('position', 'center').lower()
+                    
+                    position_map = {
+                        'top-left': (width // 4, height // 4),
+                        'top-center': (width // 2, height // 4),
+                        'top-right': (3 * width // 4, height // 4),
+                        'center-left': (width // 4, height // 2),
+                        'center': (width // 2, height // 2),
+                        'center-right': (3 * width // 4, height // 2),
+                        'bottom-left': (width // 4, 3 * height // 4),
+                        'bottom-center': (width // 2, 3 * height // 4),
+                        'bottom-right': (3 * width // 4, 3 * height // 4),
+                    }
+                    
+                    if position in position_map:
+                        x, y = position_map[position]
+                        print(f"  Clicking at {position}: ({x}, {y})")
+                        self.controller.click(x, y)
+                    else:
+                        print(f"  ✗ Unknown position: {position}")
+                        print(f"  Available: {', '.join(position_map.keys())}")
                 
                 elif action == 'type':
                     text = step.get('text')

@@ -1,0 +1,62 @@
+# test_scenarios/test_firefox_simple.yaml - Test Firefox z prostym klikaniem pozycji
+
+# Konfiguracja połączenia
+connection:
+  protocol: vnc
+  host: vnc-desktop
+  port: 5901
+  username: ""
+  password: automation
+
+# Konfiguracja Ollama
+ollama:
+  url: http://ollama:11434
+  model: llava:7b
+
+# Scenariusze testowe
+scenarios:
+  
+  # Test Firefox - z użyciem click_position (bez AI)
+  test_firefox_simple:
+    - action: connect
+    - action: wait
+      seconds: 3
+    # Firefox jest zwykle w top-left na pulpicie XFCE
+    - action: click_position
+      position: "top-left"
+    - action: wait
+      seconds: 1
+    # Jeśli to nie Firefox, spróbuj podwójnego kliknięcia
+    - action: click_position
+      position: "top-left"
+    - action: wait
+      seconds: 5
+    - action: verify
+      expected: "Firefox browser window is visible"
+    - action: key
+      key: ctrl+l
+    - action: type
+      text: "https://example.com"
+    - action: key
+      key: enter
+    - action: wait
+      seconds: 4
+    - action: verify
+      expected: "Example Domain webpage is displayed"
+    - action: analyze
+      question: "What is the main heading text on this webpage?"
+      save_to: page_heading
+    - action: disconnect
+
+  # Test Firefox - z użyciem find_and_click (AI Vision)
+  test_firefox_ai:
+    - action: connect
+    - action: wait
+      seconds: 3
+    - action: find_and_click
+      element: "Firefox browser icon on desktop"
+    - action: wait
+      seconds: 5
+    - action: verify
+      expected: "Firefox browser window is open"
+    - action: disconnect

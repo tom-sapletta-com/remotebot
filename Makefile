@@ -84,6 +84,14 @@ test-firefox: ## Uruchom test Firefox (z nagrywaniem wideo)
 	@echo "$(BLUE)Test Firefox...$(NC)"
 	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/test_basic.yaml test_firefox
 
+test-firefox-simple: ## Uruchom test Firefox (prosty, bez AI)
+	@echo "$(BLUE)Test Firefox (simple)...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/test_firefox_simple.yaml test_firefox_simple
+
+test-firefox-ai: ## Uruchom test Firefox (z AI Vision)
+	@echo "$(BLUE)Test Firefox (AI)...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/test_firefox_simple.yaml test_firefox_ai
+
 test-terminal: ## Uruchom test terminala (z nagrywaniem wideo)
 	@echo "$(BLUE)Test terminala...$(NC)"
 	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/test_basic.yaml test_terminal
