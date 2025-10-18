@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # VNC Desktop Environment
   vnc-desktop:
@@ -33,9 +31,11 @@ services:
     image: ollama/ollama:latest
     container_name: automation-ollama
     ports:
-      - "11434:11434"
+      - "11435:11434"
     volumes:
       - ollama-data:/root/.ollama
+      # Additional cache for faster model loading
+      - pip-cache:/root/.cache/pip
     networks:
       - automation-net
     restart: unless-stopped
@@ -72,6 +72,8 @@ services:
       - ./shared:/app/shared
       - ./test_scenarios:/app/test_scenarios
       - ./results:/app/results
+      # Cache volumes for faster rebuilds
+      - pip-cache:/root/.cache/pip
     networks:
       - automation-net
     stdin_open: true
@@ -96,5 +98,14 @@ networks:
     driver: bridge
 
 volumes:
+  # Persistent storage for Ollama models - critical for avoiding re-downloads
   ollama-data:
+    driver: local
+  # Persistent storage for Portainer
   portainer-data:
+    driver: local
+  # Cache volumes for faster builds
+  pip-cache:
+    driver: local
+  apt-cache:
+    driver: local

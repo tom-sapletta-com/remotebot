@@ -20,9 +20,14 @@ setup: ## Przygotuj środowisko (pierwszy raz)
 	@./setup.sh
 	@echo "$(GREEN)✓ Setup zakończony$(NC)"
 
-build: ## Zbuduj obrazy Docker
-	@echo "$(BLUE)Budowanie obrazów Docker...$(NC)"
-	@docker-compose build
+build: ## Zbuduj obrazy Docker (z cache)
+	@echo "$(BLUE)Budowanie obrazów Docker z cache...$(NC)"
+	@DOCKER_BUILDKIT=1 docker-compose build
+	@echo "$(GREEN)✓ Obrazy zbudowane$(NC)"
+
+build-no-cache: ## Zbuduj obrazy Docker bez cache
+	@echo "$(BLUE)Budowanie obrazów Docker bez cache...$(NC)"
+	@DOCKER_BUILDKIT=1 docker-compose build --no-cache
 	@echo "$(GREEN)✓ Obrazy zbudowane$(NC)"
 
 up: ## Uruchom wszystkie usługi
@@ -159,11 +164,42 @@ clean-all: ## Usuń wszystko (włącznie z volumes)
 		echo "$(YELLOW)Anulowano$(NC)"; \
 	fi
 
+clean-cache: ## Usuń tylko cache (pozostaw modele)
+	@echo "$(BLUE)Usuwanie cache Docker...$(NC)"
+	@docker volume rm -f remote-automation_pip-cache remote-automation_apt-cache 2>/dev/null || true
+	@docker builder prune -f
+	@echo "$(GREEN)✓ Cache usunięty$(NC)"
+
+volumes: ## Pokaż status volumes (modele, cache)
+	@echo "$(BLUE)Status volumes:$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Ollama modele:$(NC)"
+	@docker volume inspect remote-automation_ollama-data --format="Size: {{.Options}}" 2>/dev/null || echo "  Brak volume"
+	@echo ""
+	@echo "$(YELLOW)Cache volumes:$(NC)"
+	@docker volume ls | grep remote-automation || echo "  Brak cache volumes"
+
+models: ## Pokaż zainstalowane modele Ollama
+	@echo "$(BLUE)Zainstalowane modele Ollama:$(NC)"
+	@docker-compose exec ollama ollama list 2>/dev/null || echo "Ollama nie działa"
+
 backup-results: ## Backup wyników testów
 	@echo "$(BLUE)Tworzenie backup wyników...$(NC)"
 	@mkdir -p backups
 	@tar -czf backups/results-$$(date +%Y%m%d-%H%M%S).tar.gz results/
 	@echo "$(GREEN)✓ Backup utworzony$(NC)"
+
+backup-models: ## Backup modeli Ollama
+	@echo "$(BLUE)Tworzenie backup modeli Ollama...$(NC)"
+	@mkdir -p backups
+	@docker run --rm -v remote-automation_ollama-data:/data -v $$(pwd)/backups:/backup alpine tar czf /backup/ollama-models-$$(date +%Y%m%d-%H%M%S).tar.gz -C /data .
+	@echo "$(GREEN)✓ Backup modeli utworzony$(NC)"
+
+restore-models: ## Przywróć modele Ollama z backupu
+	@echo "$(BLUE)Dostępne backupy modeli:$(NC)"
+	@ls -la backups/ollama-models-*.tar.gz 2>/dev/null || echo "Brak backupów modeli"
+	@echo ""
+	@echo "$(YELLOW)Aby przywrócić, użyj: docker run --rm -v remote-automation_ollama-data:/data -v \$$(pwd)/backups:/backup alpine tar xzf /backup/NAZWA_PLIKU.tar.gz -C /data$(NC)"
 
 install-deps: ## Zainstaluj zależności Python lokalnie
 	@echo "$(BLUE)Instalowanie zależności...$(NC)"

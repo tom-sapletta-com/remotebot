@@ -1,0 +1,12 @@
+# Core dependencies for remote automation
+pillow>=10.0.0
+requests>=2.31.0
+PyYAML>=6.0
+vncdotool>=1.2.0
+
+# Testing framework
+pytest>=7.0.0
+pytest-html>=3.1.0
+
+# Optional - only for local development with GUI
+# pynput>=1.7.6  # Not needed in Docker containers

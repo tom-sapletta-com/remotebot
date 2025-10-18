@@ -52,7 +52,9 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Zainstaluj Python dependencies dla automatyzacji
-RUN pip3 install --no-cache-dir \
+# Cache pip packages for faster rebuilds
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip3 install \
     pillow \
     requests \
     pynput \

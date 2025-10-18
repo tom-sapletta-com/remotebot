@@ -19,14 +19,11 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Zainstaluj Python dependencies - bez pynput która nie działa w kontenerach
-RUN pip install --no-cache-dir \
-    pillow \
-    requests \
-    PyYAML \
-    vncdotool \
-    pytest \
-    pytest-html
+# Najpierw skopiuj requirements aby wykorzystać cache Docker layers
+COPY requirements.txt /tmp/requirements.txt
+# Zainstaluj Python dependencies - cache pip packages for faster rebuilds
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -r /tmp/requirements.txt
 
 # Utwórz katalog aplikacji
 WORKDIR /app

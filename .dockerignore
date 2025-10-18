@@ -41,14 +41,14 @@ USERS.md
 DOCKER.md
 docs/
 
-# Tests
+# Tests (ale pozostaw test_scenarios i test_suite.py)
 tests/
-*.test.py
-test_*.py
+*test.py
 
 # Logs
 *.log
 logs/
+results/
 
 # Database
 *.db
