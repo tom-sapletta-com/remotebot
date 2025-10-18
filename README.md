@@ -173,9 +173,42 @@ python remote_automation.py
   question: "What is the error message?"
   save_to: error_text
 
+# Zapisz screenshot (dla debugowania)
+- action: screenshot
+  name: "my_screenshot"
+
 # Rozłącz
 - action: disconnect
 ```
+
+### Tryb debugowania ze screenshotami
+
+Podczas uruchamiania scenariuszy możesz włączyć tryb debug, który:
+- Dodaje timestampy do wszystkich logów
+- Zapisuje screenshoty **przed i po każdej akcji**
+- Zapisuje screenshoty w `/app/results/screenshots/`
+
+```bash
+# Uruchom scenariusz z debug mode
+python run_scenario.py scenario.yaml test_name --debug --no-recording
+
+# Lub przez Make
+make test-debug              # Debug z AI Vision
+make test-debug-screenshots  # Zbieranie screenshotów co 1s
+make test-firefox-ai-debug   # Firefox test z debug screenshotami
+```
+
+**Format nazw screenshotów:**
+```
+20251018_190433_001_before_connect.png
+20251018_190435_002_after_connect.png
+20251018_190436_003_before_find_and_click.png
+```
+
+Gdzie:
+- `20251018_190433` - timestamp (YYYYMMDD_HHMMSS)
+- `001` - numer kroku
+- `before_connect` - nazwa akcji
 
 ## 💡 Przykładowe scenariusze
 

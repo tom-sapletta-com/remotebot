@@ -20,7 +20,7 @@ def load_scenario(scenario_file: Path):
         return yaml.safe_load(f)
 
 
-def run_scenario(scenario_file: Path, scenario_name: str, enable_recording: bool = True):
+def run_scenario(scenario_file: Path, scenario_name: str, enable_recording: bool = True, debug_mode: bool = False):
     """
     Uruchom scenariusz testowy
     
@@ -28,6 +28,7 @@ def run_scenario(scenario_file: Path, scenario_name: str, enable_recording: bool
         scenario_file: Ścieżka do pliku YAML ze scenariuszem
         scenario_name: Nazwa scenariusza do uruchomienia
         enable_recording: Czy nagrywać wideo
+        debug_mode: Czy zapisywać screenshoty przed/po każdym kroku
     """
     
     # Wczytaj scenariusz
@@ -51,6 +52,8 @@ def run_scenario(scenario_file: Path, scenario_name: str, enable_recording: bool
         print(f"📹 Nagrywanie: WŁĄCZONE")
     else:
         print(f"📹 Nagrywanie: WYŁĄCZONE")
+    if debug_mode:
+        print(f"🔍 Debug mode: WŁĄCZONY (screenshoty przed/po każdym kroku)")
     print()
     
     try:
@@ -68,11 +71,12 @@ def run_scenario(scenario_file: Path, scenario_name: str, enable_recording: bool
             model=ollama_config.get('model', 'llava:7b')
         )
         
-        # Inicjalizuj engine z nagrywaniem
+        # Inicjalizuj engine z nagrywaniem i debug mode
         engine = AutomationEngine(
             controller, 
             vision, 
-            enable_recording=enable_recording
+            enable_recording=enable_recording,
+            debug_mode=debug_mode
         )
         
         # Uruchom scenariusz
@@ -80,7 +84,16 @@ def run_scenario(scenario_file: Path, scenario_name: str, enable_recording: bool
         recording_stats = engine.execute_dsl(script, scenario_name=scenario_name)
         
         print()
-        print("✅ Scenariusz zakończony pomyślnie!")
+        
+        # Sprawdź czy były błędy
+        if engine.errors:
+            print("⚠️  Scenariusz zakończony z błędami:")
+            for error in engine.errors:
+                print(f"  - {error}")
+            success = False
+        else:
+            print("✅ Scenariusz zakończony pomyślnie!")
+            success = True
         
         # Wyświetl zebrane dane
         if engine.variables:
@@ -98,7 +111,7 @@ def run_scenario(scenario_file: Path, scenario_name: str, enable_recording: bool
             for key, value in recording_stats.items():
                 print(f"  {key}: {value}")
         
-        return True
+        return success
         
     except KeyboardInterrupt:
         print("\n\n⚠️  Scenariusz przerwany przez użytkownika")
@@ -135,6 +148,12 @@ def main():
     )
     
     parser.add_argument(
+        '--debug',
+        action='store_true',
+        help='Tryb debug - zapisuj screenshoty przed/po każdym kroku'
+    )
+    
+    parser.add_argument(
         '--list',
         action='store_true',
         help='Wyświetl listę dostępnych scenariuszy'
@@ -158,7 +177,8 @@ def main():
     
     # Uruchom scenariusz
     enable_recording = not args.no_recording
-    success = run_scenario(args.scenario_file, args.scenario_name, enable_recording)
+    debug_mode = args.debug
+    success = run_scenario(args.scenario_file, args.scenario_name, enable_recording, debug_mode)
     
     return 0 if success else 1
 

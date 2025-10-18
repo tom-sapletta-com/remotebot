@@ -9,6 +9,8 @@ import io
 import time
 import json
 import requests
+from datetime import datetime
+from pathlib import Path
 from PIL import Image
 try:
     from PIL import ImageGrab
@@ -41,6 +43,9 @@ class OllamaVision:
     
     def analyze_screen(self, image: Image.Image, prompt: str) -> str:
         """Analizuje screenshot z promptem"""
+        print(f"🤖 Wysyłam zapytanie do Ollama ({self.model})...")
+        print(f"   Timeout: 120s - to może chwilę potrwać...")
+        
         img_b64 = self.encode_image(image)
         
         payload = {
@@ -50,16 +55,25 @@ class OllamaVision:
             "stream": False
         }
         
-        response = requests.post(
-            f"{self.base_url}/api/generate",
-            json=payload,
-            timeout=120
-        )
-        
-        if response.status_code == 200:
-            return response.json()["response"]
-        else:
-            raise Exception(f"Ollama error: {response.text}")
+        start_time = time.time()
+        try:
+            response = requests.post(
+                f"{self.base_url}/api/generate",
+                json=payload,
+                timeout=120
+            )
+            
+            elapsed = time.time() - start_time
+            print(f"   ✓ Odpowiedź otrzymana po {elapsed:.1f}s")
+            
+            if response.status_code == 200:
+                return response.json()["response"]
+            else:
+                raise Exception(f"Ollama error: {response.text}")
+        except requests.exceptions.Timeout:
+            raise Exception(f"Ollama timeout po 120s - model może nie być pobrany lub Ollama nie działa")
+        except requests.exceptions.ConnectionError:
+            raise Exception(f"Nie można połączyć z Ollama ({self.base_url}) - sprawdź czy usługa działa")
     
     def find_element(self, image: Image.Image, element_desc: str) -> Optional[Dict]:
         """Znajduje element na ekranie i zwraca współrzędne"""
@@ -249,12 +263,17 @@ class RemoteController:
 class AutomationEngine:
     """Silnik automatyzacji z DSL"""
     
-    def __init__(self, controller: RemoteController, vision: OllamaVision, enable_recording: bool = False):
+    def __init__(self, controller: RemoteController, vision: OllamaVision, enable_recording: bool = False, debug_mode: bool = False):
         self.controller = controller
         self.vision = vision
         self.variables = {}
         self.enable_recording = enable_recording
         self.recorder = None
+        self.errors = []  # Śledzenie błędów
+        self.debug_mode = debug_mode
+        self.step_counter = 0
+        self.screenshot_dir = Path('/app/results/screenshots')
+        self.screenshot_dir.mkdir(parents=True, exist_ok=True)
         
         if enable_recording:
             try:
@@ -268,9 +287,37 @@ class AutomationEngine:
                 print(f"⚠️  Błąd inicjalizacji screen_recorder: {e}")
                 self.enable_recording = False
     
+    def log(self, message: str, level: str = "INFO"):
+        """Loguje wiadomość z timestampem"""
+        timestamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+        prefix = {
+            "INFO": "ℹ️",
+            "SUCCESS": "✓",
+            "ERROR": "✗",
+            "DEBUG": "🔍"
+        }.get(level, "•")
+        print(f"[{timestamp}] {prefix} {message}")
+    
+    def save_screenshot(self, name: str, screen: Image.Image = None):
+        """Zapisuje screenshot z timestampem"""
+        if screen is None:
+            screen = self.controller.capture_screen()
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{timestamp}_{self.step_counter:03d}_{name}.png"
+        filepath = self.screenshot_dir / filename
+        
+        screen.save(str(filepath))
+        self.log(f"Screenshot saved: {filepath.name}", "DEBUG")
+        return str(filepath)
+    
     def execute_dsl(self, script: List[Dict], scenario_name: str = "test"):
         """Wykonuje skrypt DSL"""
         recording_stats = {}
+        
+        self.log(f"Starting scenario: {scenario_name}", "INFO")
+        if self.debug_mode:
+            self.log("Debug mode ENABLED - saving screenshots", "DEBUG")
         
         # Rozpocznij nagrywanie jeśli włączone
         if self.enable_recording and self.recorder:
@@ -284,14 +331,27 @@ class AutomationEngine:
         
         try:
             for step in script:
+                self.step_counter += 1
                 action = step.get('action')
-                print(f"→ Executing: {action}")
+                
+                self.log(f"Step {self.step_counter}: {action}", "INFO")
+                
+                # Screenshot przed akcją (jeśli debug)
+                if self.debug_mode and action not in ['wait', 'disconnect']:
+                    try:
+                        screen = self.controller.capture_screen()
+                        self.save_screenshot(f"before_{action}", screen)
+                    except Exception as e:
+                        self.log(f"Could not save screenshot: {e}", "ERROR")
                 
                 if action == 'connect':
                     self.controller.connect()
+                    self.log(f"Connected to {self.controller.host}:{self.controller.port}", "SUCCESS")
             
                 elif action == 'wait':
-                    time.sleep(step.get('seconds', 1))
+                    seconds = step.get('seconds', 1)
+                    self.log(f"Waiting {seconds}s...", "INFO")
+                    time.sleep(seconds)
                 
                 elif action == 'find_and_click':
                     element = step.get('element')
@@ -307,8 +367,10 @@ class AutomationEngine:
                         print(f"  ✓ Found at ({x}, {y}) - confidence: {confidence}")
                         self.controller.click(x, y)
                     else:
-                        print(f"  ✗ Element not found: {element}")
+                        error_msg = f"Element not found: {element}"
+                        print(f"  ✗ {error_msg}")
                         print(f"  Tip: Check if the element is visible on screen")
+                        self.errors.append(error_msg)
                 
                 elif action == 'click':
                     x, y = step.get('x'), step.get('y')
@@ -359,7 +421,9 @@ class AutomationEngine:
                     if 'yes' in response.lower():
                         print(f"  ✓ Verified: {expected}")
                     else:
-                        print(f"  ✗ Verification failed: {expected}")
+                        error_msg = f"Verification failed: {expected}"
+                        print(f"  ✗ {error_msg}")
+                        self.errors.append(error_msg)
                 
                 elif action == 'analyze':
                     screen = self.controller.capture_screen()
@@ -372,11 +436,27 @@ class AutomationEngine:
                     if var_name:
                         self.variables[var_name] = response
                 
+                elif action == 'screenshot':
+                    # Manualne zapisanie screenshota
+                    name = step.get('name', 'manual')
+                    screen = self.controller.capture_screen()
+                    filepath = self.save_screenshot(name, screen)
+                    self.log(f"Screenshot: {filepath}", "SUCCESS")
+                
                 elif action == 'disconnect':
                     self.controller.disconnect()
+                    self.log("Disconnected", "INFO")
                 
                 else:
-                    print(f"  ✗ Unknown action: {action}")
+                    self.log(f"Unknown action: {action}", "ERROR")
+                
+                # Screenshot po akcji (jeśli debug)
+                if self.debug_mode and action not in ['wait', 'disconnect', 'screenshot']:
+                    try:
+                        screen = self.controller.capture_screen()
+                        self.save_screenshot(f"after_{action}", screen)
+                    except Exception as e:
+                        self.log(f"Could not save screenshot: {e}", "ERROR")
                 
                 # Krótka przerwa między akcjami
                 time.sleep(0.5)

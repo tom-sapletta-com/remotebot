@@ -78,7 +78,12 @@ test-wait: ## Uruchom testy (z czekaniem na usługi)
 
 test-basic: ## Uruchom podstawowy test scenariusza (z nagrywaniem wideo)
 	@echo "$(BLUE)Test podstawowy...$(NC)"
+	@echo "$(YELLOW)⚠️  Ten test używa AI (Ollama) - może zająć 30-120s$(NC)"
 	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/test_basic.yaml test_connection
+
+test-quick: ## Uruchom szybki test połączenia (bez AI, bez wideo)
+	@echo "$(BLUE)Szybki test połączenia...$(NC)"
+	@docker-compose exec automation-controller python3 -c "from automation.remote_automation import RemoteController; c = RemoteController('vnc', 'vnc-desktop', 5901, 'automation'); c.connect(); print('✓ Połączono'); import time; time.sleep(2); c.disconnect(); print('✓ Rozłączono')"
 
 test-firefox: ## Uruchom test Firefox (z nagrywaniem wideo)
 	@echo "$(BLUE)Test Firefox...$(NC)"
@@ -91,6 +96,19 @@ test-firefox-simple: ## Uruchom test Firefox (prosty, bez AI)
 test-firefox-ai: ## Uruchom test Firefox (z AI Vision)
 	@echo "$(BLUE)Test Firefox (AI)...$(NC)"
 	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/test_firefox_simple.yaml test_firefox_ai
+
+test-firefox-ai-debug: ## Uruchom test Firefox AI (z debug screenshotami)
+	@echo "$(BLUE)Test Firefox AI (debug)...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/test_firefox_simple.yaml test_firefox_ai --debug --no-recording
+
+test-debug: ## Debug - pokaż co widzi AI na ekranie (z screenshotami)
+	@echo "$(BLUE)Debug ekranu (AI Vision)...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/test_firefox_simple.yaml test_debug_screen --debug --no-recording
+
+test-debug-screenshots: ## Debug - zbieraj screenshoty co 1s przez 5s
+	@echo "$(BLUE)Debug screenshotów (co 1s)...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/test_firefox_simple.yaml test_debug_screenshots --no-recording
+	@echo "$(GREEN)✓ Screenshoty zapisane w: results/screenshots/$(NC)"
 
 test-terminal: ## Uruchom test terminala (z nagrywaniem wideo)
 	@echo "$(BLUE)Test terminala...$(NC)"
@@ -136,11 +154,13 @@ info: ## Pokaż informacje o dostępie
 	@echo "   URL: $(BLUE)http://localhost:9000$(NC)"
 	@echo ""
 	@echo "$(YELLOW)🧪 Szybkie testy:$(NC)"
-	@echo "   make test             - Pełny test suite"
-	@echo "   make test-basic       - Podstawowy test (z wideo)"
-	@echo "   make test-firefox     - Test Firefox (z wideo)"
-	@echo "   make test-no-recording - Test bez wideo (szybszy)"
-	@echo "   make list-scenarios   - Lista scenariuszy"
+	@echo "   make test-quick          - Szybki test (BEZ AI, 5s)"
+	@echo "   make test-debug          - Debug ekranu (co widzi AI)"
+	@echo "   make test-debug-screenshots - Screenshoty co 1s (5s)"
+	@echo "   make test-firefox-simple - Firefox (BEZ AI)"
+	@echo "   make test-firefox-ai-debug - Firefox AI + screenshoty"
+	@echo "   make test-basic          - Podstawowy test (z AI, 30-60s)"
+	@echo "   make test                - Pełny test suite"
 	@echo ""
 	@echo "$(YELLOW)🎬 Nagrania testów:$(NC)"
 	@echo "   Lokalizacja: $(BLUE)results/videos/$(NC)"

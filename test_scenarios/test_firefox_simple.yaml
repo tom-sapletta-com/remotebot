@@ -60,3 +60,43 @@ scenarios:
     - action: verify
       expected: "Firefox browser window is open"
     - action: disconnect
+  
+  # Debug - tylko sprawdź co widzi AI
+  test_debug_screen:
+    - action: connect
+    - action: wait
+      seconds: 2
+    - action: analyze
+      question: "Describe everything you see on this screen in detail. What applications, icons, or UI elements are visible?"
+      save_to: screen_description
+    - action: disconnect
+  
+  # Debug z wieloma screenshotami - obserwuj desktop przez 10 sekund
+  test_debug_screenshots:
+    - action: connect
+    - action: screenshot
+      name: "initial_desktop"
+    - action: wait
+      seconds: 1
+    - action: screenshot
+      name: "desktop_1s"
+    - action: wait
+      seconds: 1
+    - action: screenshot
+      name: "desktop_2s"
+    - action: wait
+      seconds: 1
+    - action: screenshot
+      name: "desktop_3s"
+    - action: wait
+      seconds: 1
+    - action: screenshot
+      name: "desktop_4s"
+    - action: wait
+      seconds: 1
+    - action: screenshot
+      name: "desktop_5s"
+    - action: analyze
+      question: "List all visible icons, buttons, and UI elements you can see on this desktop screen."
+      save_to: desktop_elements
+    - action: disconnect

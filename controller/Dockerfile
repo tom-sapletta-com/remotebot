@@ -16,6 +16,13 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     python3-setuptools \
     build-essential \
+    # OpenCV dependencies dla nagrywania wideo
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
