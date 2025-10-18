@@ -12,5 +12,8 @@ pytest-html>=3.1.0
 opencv-python>=4.8.0
 numpy>=1.21.0
 
+# Live monitoring web interface
+flask>=2.3.0
+
 # Optional - only for local development with GUI
 # pynput>=1.7.6  # Not needed in Docker containers
