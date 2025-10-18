@@ -12,14 +12,17 @@ RUN apt-get update && apt-get install -y \
     vim \
     less \
     procps \
+    # Zależności podstawowe
+    python3-dev \
+    python3-setuptools \
+    build-essential \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Zainstaluj Python dependencies
+# Zainstaluj Python dependencies - bez pynput która nie działa w kontenerach
 RUN pip install --no-cache-dir \
     pillow \
     requests \
-    pynput \
     PyYAML \
     vncdotool \
     pytest \

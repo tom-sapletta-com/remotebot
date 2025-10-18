@@ -9,10 +9,22 @@ import io
 import time
 import json
 import requests
-from PIL import Image, ImageGrab
+from PIL import Image
+try:
+    from PIL import ImageGrab
+except ImportError:
+    ImageGrab = None
 from typing import Dict, List, Optional
 import subprocess
 import re
+
+# Try to import pynput, but don't fail if it's not available
+try:
+    from pynput.mouse import Button, Controller as MouseController
+    from pynput.keyboard import Controller as KeyboardController, Key
+    PYNPUT_AVAILABLE = True
+except ImportError:
+    PYNPUT_AVAILABLE = False
 
 class OllamaVision:
     """Integracja z Ollama do analizy obrazu"""
@@ -127,43 +139,49 @@ class RemoteController:
         if self.protocol == "vnc" and self.connection:
             self.connection.mousePress(x, y, 1)
         else:
-            # Dla RDP/SPICE używamy pynput
-            from pynput.mouse import Button, Controller
-            mouse = Controller()
-            mouse.position = (x, y)
-            mouse.click(Button.left)
+            # Dla RDP/SPICE używamy pynput jeśli dostępne
+            if PYNPUT_AVAILABLE:
+                mouse = MouseController()
+                mouse.position = (x, y)
+                mouse.click(Button.left)
+            else:
+                print(f"Warning: pynput not available, cannot click at ({x}, {y})")
     
     def type_text(self, text: str):
         """Wpisanie tekstu"""
         if self.protocol == "vnc" and self.connection:
             self.connection.keyPress(text)
         else:
-            from pynput.keyboard import Controller
-            keyboard = Controller()
-            keyboard.type(text)
+            if PYNPUT_AVAILABLE:
+                keyboard = KeyboardController()
+                keyboard.type(text)
+            else:
+                print(f"Warning: pynput not available, cannot type text: {text}")
     
     def key_press(self, key: str):
         """Naciśnięcie klawisza"""
         if self.protocol == "vnc" and self.connection:
             self.connection.keyPress(key)
         else:
-            from pynput.keyboard import Controller, Key
-            keyboard = Controller()
-            
-            # Mapowanie klawiszy specjalnych
-            key_map = {
-                'enter': Key.enter,
-                'tab': Key.tab,
-                'esc': Key.esc,
-                'space': Key.space,
-            }
-            
-            if key.lower() in key_map:
-                keyboard.press(key_map[key.lower()])
-                keyboard.release(key_map[key.lower()])
+            if PYNPUT_AVAILABLE:
+                keyboard = KeyboardController()
+                
+                # Mapowanie klawiszy specjalnych
+                key_map = {
+                    'enter': Key.enter,
+                    'tab': Key.tab,
+                    'esc': Key.esc,
+                    'space': Key.space,
+                }
+                
+                if key.lower() in key_map:
+                    keyboard.press(key_map[key.lower()])
+                    keyboard.release(key_map[key.lower()])
+                else:
+                    keyboard.press(key)
+                    keyboard.release(key)
             else:
-                keyboard.press(key)
-                keyboard.release(key)
+                print(f"Warning: pynput not available, cannot press key: {key}")
     
     def capture_screen(self) -> Image.Image:
         """Przechwytuje screenshot"""
@@ -171,7 +189,11 @@ class RemoteController:
             self.connection.captureScreen('temp_screen.png')
             return Image.open('temp_screen.png')
         else:
-            return ImageGrab.grab()
+            if ImageGrab:
+                return ImageGrab.grab()
+            else:
+                # Create a dummy image if ImageGrab is not available
+                return Image.new('RGB', (800, 600), color='black')
     
     def disconnect(self):
         """Rozłącza połączenie"""
