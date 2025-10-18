@@ -76,17 +76,25 @@ test-wait: ## Uruchom testy (z czekaniem na usługi)
 	@echo "$(BLUE)Uruchamianie testów z czekaniem...$(NC)"
 	@python3 run_tests.py --wait
 
-test-basic: ## Uruchom podstawowy test scenariusza
+test-basic: ## Uruchom podstawowy test scenariusza (z nagrywaniem wideo)
 	@echo "$(BLUE)Test podstawowy...$(NC)"
-	@docker-compose exec automation-controller python3 automation_cli.py test_scenarios/test_basic.yaml --run test_connection
+	@docker-compose exec automation-controller python3 run_scenario.py test_scenarios/test_basic.yaml test_connection
 
-test-firefox: ## Uruchom test Firefox
+test-firefox: ## Uruchom test Firefox (z nagrywaniem wideo)
 	@echo "$(BLUE)Test Firefox...$(NC)"
-	@docker-compose exec automation-controller python3 automation_cli.py test_scenarios/test_basic.yaml --run test_firefox
+	@docker-compose exec automation-controller python3 run_scenario.py test_scenarios/test_basic.yaml test_firefox
 
-test-terminal: ## Uruchom test terminala
+test-terminal: ## Uruchom test terminala (z nagrywaniem wideo)
 	@echo "$(BLUE)Test terminala...$(NC)"
-	@docker-compose exec automation-controller python3 automation_cli.py test_scenarios/test_basic.yaml --run test_terminal
+	@docker-compose exec automation-controller python3 run_scenario.py test_scenarios/test_basic.yaml test_terminal
+
+test-no-recording: ## Uruchom test bez nagrywania (szybszy)
+	@echo "$(BLUE)Test bez nagrywania...$(NC)"
+	@docker-compose exec automation-controller python3 run_scenario.py test_scenarios/test_basic.yaml test_connection --no-recording
+
+list-scenarios: ## Pokaż listę dostępnych scenariuszy
+	@echo "$(BLUE)Dostępne scenariusze:$(NC)"
+	@docker-compose exec automation-controller python3 run_scenario.py test_scenarios/test_basic.yaml dummy --list || true
 
 interactive: ## Tryb interaktywny CLI
 	@docker-compose exec automation-controller python3 automation_cli.py test_scenarios/test_basic.yaml --interactive
@@ -120,9 +128,15 @@ info: ## Pokaż informacje o dostępie
 	@echo "   URL: $(BLUE)http://localhost:9000$(NC)"
 	@echo ""
 	@echo "$(YELLOW)🧪 Szybkie testy:$(NC)"
-	@echo "   make test          - Pełny test suite"
-	@echo "   make test-basic    - Podstawowy test"
-	@echo "   make interactive   - Tryb interaktywny"
+	@echo "   make test             - Pełny test suite"
+	@echo "   make test-basic       - Podstawowy test (z wideo)"
+	@echo "   make test-firefox     - Test Firefox (z wideo)"
+	@echo "   make test-no-recording - Test bez wideo (szybszy)"
+	@echo "   make list-scenarios   - Lista scenariuszy"
+	@echo ""
+	@echo "$(YELLOW)🎬 Nagrania testów:$(NC)"
+	@echo "   Lokalizacja: $(BLUE)results/videos/$(NC)"
+	@echo "   Format: MP4 (10 fps)"
 	@echo ""
 	@echo "$(YELLOW)📚 Więcej komend:$(NC)"
 	@echo "   make help          - Pełna lista komend"

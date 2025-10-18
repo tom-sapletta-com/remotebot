@@ -207,79 +207,113 @@ class RemoteController:
 class AutomationEngine:
     """Silnik automatyzacji z DSL"""
     
-    def __init__(self, controller: RemoteController, vision: OllamaVision):
+    def __init__(self, controller: RemoteController, vision: OllamaVision, enable_recording: bool = False):
         self.controller = controller
         self.vision = vision
         self.variables = {}
+        self.enable_recording = enable_recording
+        self.recorder = None
+        
+        if enable_recording:
+            try:
+                from screen_recorder import ScreenRecorder
+                self.recorder = ScreenRecorder()
+            except ImportError:
+                print("⚠️  screen_recorder nie jest dostępny, nagrywanie wyłączone")
+                self.enable_recording = False
     
-    def execute_dsl(self, script: List[Dict]):
+    def execute_dsl(self, script: List[Dict], scenario_name: str = "test"):
         """Wykonuje skrypt DSL"""
-        for step in script:
-            action = step.get('action')
-            print(f"→ Executing: {action}")
-            
-            if action == 'connect':
-                self.controller.connect()
-            
-            elif action == 'wait':
-                time.sleep(step.get('seconds', 1))
-            
-            elif action == 'find_and_click':
-                element = step.get('element')
-                screen = self.controller.capture_screen()
-                result = self.vision.find_element(screen, element)
-                
-                if result.get('found'):
-                    x, y = result['x'], result['y']
-                    print(f"  Found at ({x}, {y})")
-                    self.controller.click(x, y)
-                else:
-                    print(f"  ✗ Element not found: {element}")
-            
-            elif action == 'click':
-                x, y = step.get('x'), step.get('y')
-                self.controller.click(x, y)
-            
-            elif action == 'type':
-                text = step.get('text')
-                self.controller.type_text(text)
-            
-            elif action == 'key':
-                key = step.get('key')
-                self.controller.key_press(key)
-            
-            elif action == 'verify':
-                screen = self.controller.capture_screen()
-                expected = step.get('expected')
-                response = self.vision.analyze_screen(
-                    screen, 
-                    f"Check if the screen shows: {expected}. Answer only YES or NO."
+        recording_stats = {}
+        
+        # Rozpocznij nagrywanie jeśli włączone
+        if self.enable_recording and self.recorder:
+            try:
+                self.recorder.start_recording(
+                    scenario_name, 
+                    self.controller.capture_screen
                 )
+            except Exception as e:
+                print(f"⚠️  Nie można rozpocząć nagrywania: {e}")
+        
+        try:
+            for step in script:
+                action = step.get('action')
+                print(f"→ Executing: {action}")
                 
-                if 'yes' in response.lower():
-                    print(f"  ✓ Verified: {expected}")
+                if action == 'connect':
+                    self.controller.connect()
+            
+                elif action == 'wait':
+                    time.sleep(step.get('seconds', 1))
+                
+                elif action == 'find_and_click':
+                    element = step.get('element')
+                    screen = self.controller.capture_screen()
+                    result = self.vision.find_element(screen, element)
+                    
+                    if result.get('found'):
+                        x, y = result['x'], result['y']
+                        print(f"  Found at ({x}, {y})")
+                        self.controller.click(x, y)
+                    else:
+                        print(f"  ✗ Element not found: {element}")
+                
+                elif action == 'click':
+                    x, y = step.get('x'), step.get('y')
+                    self.controller.click(x, y)
+                
+                elif action == 'type':
+                    text = step.get('text')
+                    self.controller.type_text(text)
+                
+                elif action == 'key':
+                    key = step.get('key')
+                    self.controller.key_press(key)
+                
+                elif action == 'verify':
+                    screen = self.controller.capture_screen()
+                    expected = step.get('expected')
+                    response = self.vision.analyze_screen(
+                        screen, 
+                        f"Check if the screen shows: {expected}. Answer only YES or NO."
+                    )
+                    
+                    if 'yes' in response.lower():
+                        print(f"  ✓ Verified: {expected}")
+                    else:
+                        print(f"  ✗ Verification failed: {expected}")
+                
+                elif action == 'analyze':
+                    screen = self.controller.capture_screen()
+                    question = step.get('question')
+                    response = self.vision.analyze_screen(screen, question)
+                    print(f"  Analysis: {response}")
+                    
+                    # Zapisz do zmiennej jeśli podano
+                    var_name = step.get('save_to')
+                    if var_name:
+                        self.variables[var_name] = response
+                
+                elif action == 'disconnect':
+                    self.controller.disconnect()
+                
                 else:
-                    print(f"  ✗ Verification failed: {expected}")
-            
-            elif action == 'analyze':
-                screen = self.controller.capture_screen()
-                question = step.get('question')
-                response = self.vision.analyze_screen(screen, question)
-                print(f"  Analysis: {response}")
+                    print(f"  ✗ Unknown action: {action}")
                 
-                # Zapisz do zmiennej jeśli podano
-                var_name = step.get('save_to')
-                if var_name:
-                    self.variables[var_name] = response
+                # Krótka przerwa między akcjami
+                time.sleep(0.5)
+        
+        finally:
+            # Zatrzymaj nagrywanie jeśli było aktywne
+            if self.enable_recording and self.recorder:
+                try:
+                    recording_stats = self.recorder.stop_recording()
+                    return recording_stats
+                except Exception as e:
+                    print(f"⚠️  Błąd zatrzymania nagrywania: {e}")
             
-            elif action == 'disconnect':
-                self.controller.disconnect()
-            
-            else:
-                print(f"  ✗ Unknown action: {action}")
-            
-            # Krótka przerwa między akcjami
-            time.sleep(0.5)
+            return recording_stats
 
 
 def main():

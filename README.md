@@ -8,6 +8,8 @@ System automatyzacji zdalnej kontroli komputera z integracją AI vision models p
 - **AI Vision**: Analiza ekranu przez Ollama (modele do 12B)
 - **Prosty DSL**: Opis zadań w YAML/JSON
 - **Automatyzacja**: Klik, pisanie, weryfikacja, analiza
+- **Optymalizacja**: Cache'owanie warstw Dockera i modeli
+- **Persystencja danych**: Modele i cache są zachowywane między uruchomieniami
 
 ## 📋 Wymagania
 
@@ -32,20 +34,76 @@ sudo apt-get install freerdp2-x11
 sudo apt-get install virt-viewer
 ```
 
-### Instalacja Ollama
+### Instalacja Ollama (w kontenerze)
+
+System automatycznie pobiera i konfiguruje Ollama w kontenerze. Domyślnie używany jest model `llava:7b`.
+
+Dostępne komendy zarządzania modelami:
 
 ```bash
-# Linux/Mac
-curl -fsSL https://ollama.com/install.sh | sh
+# Lista zainstalowanych modeli
+make models
 
-# Pobierz model vision (wybierz jeden):
-ollama pull llava:7b      # 4.5GB - szybki
-ollama pull llava:13b     # 8GB - dokładniejszy
-ollama pull moondream     # 1.7GB - najmniejszy
-ollama pull bakllava      # 5GB - dobry kompromis
+# Backup modeli do pliku
+make backup-models
 
-# Sprawdź czy działa
-ollama run llava:7b "Hello"
+# Przywróć modele z backupu
+make restore-models
+
+# Usuń cache (zachowując modele)
+make clean-cache
+```
+
+### Zoptymalizowane budowanie
+
+```bash
+# Buduj z cache (domyślnie)
+make build
+
+# Wymuś pełny rebuild
+make build-no-cache
+```
+
+## 🛠️ Rozwiązywanie problemów
+
+### Problem: Błąd połączenia VNC
+
+Jeśli testy nie mogą się połączyć z VNC, sprawdź:
+
+```bash
+# Sprawdź status kontenera VNC
+docker-compose ps vnc-desktop
+
+# Zobacz logi VNC
+docker-compose logs vnc-desktop
+
+# Sprawdź, czy port 5901 jest otwarty
+ss -tuln | grep 5901
+```
+
+### Problem: Brak modeli Ollama
+
+Jeśli modele nie są dostępne:
+
+```bash
+# Sprawdź, czy kontener Ollama działa
+docker-compose ps ollama
+
+# Zobacz logi Ollama
+docker-compose logs ollama
+
+# Ręczne pobranie modelu
+docker-compose exec ollama ollama pull llava:7b
+```
+
+### Problem: Brak miejsca na dysku
+
+```bash
+# Wyczyść nieużywane obrazy i kontenery
+docker system prune -a
+
+# Sprawdź zajętość volumes
+docker system df -v
 ```
 
 ## 🎯 Szybki start

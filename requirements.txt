@@ -8,5 +8,9 @@ vncdotool>=1.2.0
 pytest>=7.0.0
 pytest-html>=3.1.0
 
+# Video recording for test scenarios
+opencv-python>=4.8.0
+numpy>=1.21.0
+
 # Optional - only for local development with GUI
 # pynput>=1.7.6  # Not needed in Docker containers
