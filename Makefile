@@ -336,6 +336,16 @@ list-diag-tests: ## Pokaż listę testów diagnostycznych
 	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/diagnostics.yaml dummy --list || true
 
 # ===================================
+# Live Monitor - Web interface z live preview
+# ===================================
+
+live-monitor: ## Uruchom Live Monitor (http://localhost:5000)
+	@echo "$(BLUE)Starting Live Automation Monitor...$(NC)"
+	@echo "$(GREEN)📺 Open: http://localhost:5000$(NC)"
+	@echo ""
+	@docker-compose exec -T automation-controller python3 /app/live_monitor.py
+
+# ===================================
 
 test-terminal: ## Uruchom test terminala (z nagrywaniem wideo)
 	@echo "$(BLUE)Test terminala...$(NC)"
