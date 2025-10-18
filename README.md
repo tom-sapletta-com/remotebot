@@ -7,7 +7,9 @@ System automatyzacji zdalnej kontroli komputera z integracją AI vision models p
 - **Zdalna kontrola**: VNC, RDP, SPICE
 - **AI Vision**: Analiza ekranu przez Ollama (modele do 12B)
 - **⚡ CV Detection**: Computer Vision - 100x szybsze niż AI! (milisekundy)
+- **🎬 Live Monitor**: Web interface z real-time preview (http://localhost:5000)
 - **🔐 Auto-Login**: Automatyczne wykrywanie i wypełnianie okien logowania
+- **🔍 Diagnostics**: Automatyczne wykrywanie problemów (VNC, lock screen)
 - **Prosty DSL**: Opis zadań w YAML/JSON
 - **Automatyzacja**: Klik, pisanie, weryfikacja, analiza
 - **📹 Nagrywanie wideo**: Każdy test nagrywany do MP4 (10 fps)
@@ -59,18 +61,37 @@ make list-cv-tests
 
 **Zobacz:** [CV_DETECTION_GUIDE.md](CV_DETECTION_GUIDE.md) - Pełna dokumentacja
 
+### 🎬 Live Monitor - Real-Time Web Interface (NOWE!)
+```bash
+# Uruchom web monitoring z live preview
+make live-monitor
+
+# Otwórz w przeglądarce:
+http://localhost:5000
+```
+
+**Features:**
+- 📋 Lista kroków scenariusza (po lewej)
+- 📺 Live VNC preview (po prawej) 
+- 🔄 Real-time updates (1 FPS)
+- 🎯 Wszystkie scenariusze dostępne
+- 🐛 Perfect dla debugowania
+
+**Zobacz:** [LIVE_MONITOR_GUIDE.md](LIVE_MONITOR_GUIDE.md) - Pełna dokumentacja
+
 ### 📚 Dokumentacja (Przeczytaj w tej kolejności)
 1. **[START_HERE.md](START_HERE.md)** ⭐ - Zacznij tu! (3 min)
-2. **[DIAGNOSTICS_GUIDE.md](DIAGNOSTICS_GUIDE.md)** 🔍 - Rozwiązywanie problemów (VNC, lock screen)
-3. **[AI_VS_CV_COMPARISON.md](AI_VS_CV_COMPARISON.md)** 📊 - Rzeczywiste porównanie (60s vs <1s!)
-4. **[CV_DETECTION_GUIDE.md](CV_DETECTION_GUIDE.md)** ⚡ - CV Detection (100x szybsze!)
-5. **[AUTO_LOGIN_GUIDE.md](AUTO_LOGIN_GUIDE.md)** 🔐 - Auto-Login (wykrywanie i wypełnianie)
-6. **[FINAL_SUMMARY.md](FINAL_SUMMARY.md)** 🎯 - Finalne podsumowanie + AI limitations
-7. **[WORKING_TESTS_GUIDE.md](WORKING_TESTS_GUIDE.md)** - Co naprawdę działa
-8. **[TEST_RESULTS_SUMMARY.md](TEST_RESULTS_SUMMARY.md)** - Wyniki testów
-9. [HYBRID_TESTS_README.md](HYBRID_TESTS_README.md) - Hybrid approach (teoria)
-10. [AI_TESTS_QUICK_START.md](AI_TESTS_QUICK_START.md) - Quick start guide
-11. [docs/AI_TESTS.md](docs/AI_TESTS.md) - Pełna dokumentacja (teoria)
+2. **[LIVE_MONITOR_GUIDE.md](LIVE_MONITOR_GUIDE.md)** 🎬 - Live web monitoring (real-time preview)
+3. **[DIAGNOSTICS_GUIDE.md](DIAGNOSTICS_GUIDE.md)** 🔍 - Rozwiązywanie problemów (VNC, lock screen)
+4. **[AI_VS_CV_COMPARISON.md](AI_VS_CV_COMPARISON.md)** 📊 - Rzeczywiste porównanie (60s vs <1s!)
+5. **[CV_DETECTION_GUIDE.md](CV_DETECTION_GUIDE.md)** ⚡ - CV Detection (100x szybsze!)
+6. **[AUTO_LOGIN_GUIDE.md](AUTO_LOGIN_GUIDE.md)** 🔐 - Auto-Login (wykrywanie i wypełnianie)
+7. **[FINAL_SUMMARY.md](FINAL_SUMMARY.md)** 🎯 - Finalne podsumowanie + AI limitations
+8. **[WORKING_TESTS_GUIDE.md](WORKING_TESTS_GUIDE.md)** - Co naprawdę działa
+9. **[TEST_RESULTS_SUMMARY.md](TEST_RESULTS_SUMMARY.md)** - Wyniki testów
+10. [HYBRID_TESTS_README.md](HYBRID_TESTS_README.md) - Hybrid approach (teoria)
+11. [AI_TESTS_QUICK_START.md](AI_TESTS_QUICK_START.md) - Quick start guide
+12. [docs/AI_TESTS.md](docs/AI_TESTS.md) - Pełna dokumentacja (teoria)
 
 ### 🎓 Co Działa vs Co Nie (Rzeczywiste Testy)
 | Test | Status | Czas | Metoda |

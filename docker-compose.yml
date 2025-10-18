@@ -62,6 +62,8 @@ services:
     depends_on:
       - vnc-desktop
       - ollama
+    ports:
+      - "5000:5000"  # Live Monitor web interface
     environment:
       - VNC_HOST=vnc-desktop
       - VNC_PORT=5901
