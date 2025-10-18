@@ -1,0 +1,177 @@
+# Diagnostics - Sprawdzanie połączenia i stanu ekranu
+# Użyj gdy ekran wydaje się pusty lub jest problem z VNC
+
+connection:
+  protocol: vnc
+  host: vnc-desktop
+  port: 5901
+  password: automation
+
+ollama:
+  url: http://ollama:11434
+  model: llava:7b
+
+scenarios:
+  
+  # ===================================
+  # Screen Diagnostics - Pełna diagnostyka ekranu
+  # ===================================
+  screen_diagnostics:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    # CV diagnostyka (milisekundy!)
+    - action: cv_detect
+      save_to: diag
+    
+    # Diagnostyka wyświetli:
+    # - Jasność ekranu (0-255)
+    # - Liczba krawędzi (edge count)
+    # - Czy ekran jest pusty (blank)
+    # - Możliwy problem (lock screen, screensaver, etc.)
+    
+    - action: disconnect
+
+  # ===================================
+  # VNC Connection Check - Sprawdź połączenie VNC
+  # ===================================
+  vnc_connection_check:
+    - action: connect
+    - action: wait
+      seconds: 3
+    
+    # Screenshot + diagnostyka
+    - action: screenshot
+      name: "vnc_check"
+    
+    - action: cv_detect
+      save_to: vnc_diag
+    
+    # Jeśli ekran pusty - może być problem z VNC
+    # Check: diag_vnc_diagnostics_is_blank
+    
+    - action: wait
+      seconds: 2
+    
+    # Drugi screenshot po chwili
+    - action: screenshot
+      name: "vnc_check_2"
+    
+    - action: cv_detect
+      save_to: vnc_diag2
+    
+    - action: disconnect
+
+  # ===================================
+  # Lock Screen Detection - Wykryj zablokowany ekran
+  # ===================================
+  lock_screen_detection:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    # CV detect ze szczegółami
+    - action: cv_detect
+      save_to: lock_check
+    
+    # Jeśli brightness < 50 i has_dialog = True
+    # To prawdopodobnie lock screen
+    
+    # Jeśli brightness < 30 i is_blank = True
+    # To prawdopodobnie screensaver lub VNC problem
+    
+    - action: disconnect
+
+  # ===================================
+  # Desktop Ready Check - Sprawdź czy desktop jest gotowy
+  # ===================================
+  desktop_ready_check:
+    - action: connect
+    - action: wait
+      seconds: 3
+    
+    # Sprawdź 3 razy co 2 sekundy
+    - action: cv_detect
+      save_to: ready_1
+    
+    - action: wait
+      seconds: 2
+    
+    - action: cv_detect
+      save_to: ready_2
+    
+    - action: wait
+      seconds: 2
+    
+    - action: cv_detect
+      save_to: ready_3
+    
+    # Jeśli window_count > 0 lub edge_count > 5000
+    # Desktop jest gotowy
+    
+    # Jeśli edge_count < 1000 we wszystkich 3
+    # Coś jest nie tak (lock screen, loading, etc.)
+    
+    - action: disconnect
+
+  # ===================================
+  # Full System Check - Pełne sprawdzenie systemu
+  # ===================================
+  full_system_check:
+    - action: connect
+    - action: wait
+      seconds: 3
+    
+    # 1. Diagnostyka ekranu
+    - action: cv_detect
+      save_to: system
+    
+    # 2. Screenshot dla analizy
+    - action: screenshot
+      name: "system_check"
+    
+    # 3. AI weryfikacja (jeśli CV wykryje problem)
+    - action: analyze
+      question: "Describe what you see on screen. Is the desktop visible? Are there any windows, icons, or UI elements? Is the screen black or blank?"
+      save_to: ai_verification
+    
+    - action: disconnect
+
+  # ===================================
+  # Auto Recovery - Automatyczne odzyskiwanie
+  # ===================================
+  auto_recovery:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    # Sprawdź stan
+    - action: cv_detect
+      save_to: recovery_check
+    
+    # Jeśli wykryto lock screen - spróbuj odblokować
+    - action: cv_find_text_field
+      click: true
+    
+    - action: wait
+      seconds: 0.5
+    
+    - action: type
+      text: "automation"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 3
+    
+    # Sprawdź ponownie
+    - action: cv_detect
+      save_to: recovery_after
+    
+    # Jeśli nadal problem - dodatkowa diagnostyka
+    - action: screenshot
+      name: "recovery_final"
+    
+    - action: disconnect

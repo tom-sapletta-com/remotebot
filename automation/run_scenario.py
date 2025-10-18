@@ -105,8 +105,15 @@ def run_scenario(scenario_file: Path, scenario_name: str, enable_recording: bool
             print()
             print("📊 Zebrane dane:")
             for key, value in engine.variables.items():
-                # Obetnij długie wartości
-                display_value = value[:100] + "..." if len(value) > 100 else value
+                # Obetnij długie wartości (tylko dla stringów)
+                if isinstance(value, str):
+                    display_value = value[:100] + "..." if len(value) > 100 else value
+                elif isinstance(value, (list, tuple)) and len(value) > 0:
+                    # Dla list/tupli pokaż pierwsze elementy
+                    display_value = f"{value[:3]}{'...' if len(value) > 3 else ''}"
+                else:
+                    # Boolean, int, float, None - pokaż jak jest
+                    display_value = value
                 print(f"  {key}: {display_value}")
         
         # Wyświetl statystyki nagrywania

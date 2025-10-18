@@ -304,6 +304,38 @@ list-cv-tests: ## Pokaż listę testów CV
 	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/cv_speed_test.yaml dummy --list || true
 
 # ===================================
+# Diagnostics - Sprawdzanie połączenia i problemów
+# ===================================
+
+test-diag-screen: ## Diag: Sprawdź stan ekranu (brightness, content, issues)
+	@echo "$(BLUE)Diagnostics: Screen check...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/diagnostics.yaml screen_diagnostics --no-recording
+
+test-diag-vnc: ## Diag: Sprawdź połączenie VNC
+	@echo "$(BLUE)Diagnostics: VNC connection check...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/diagnostics.yaml vnc_connection_check --no-recording
+
+test-diag-lock: ## Diag: Wykryj lock screen
+	@echo "$(BLUE)Diagnostics: Lock screen detection...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/diagnostics.yaml lock_screen_detection --no-recording
+
+test-diag-ready: ## Diag: Sprawdź czy desktop jest gotowy
+	@echo "$(BLUE)Diagnostics: Desktop ready check...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/diagnostics.yaml desktop_ready_check --no-recording
+
+test-diag-full: ## Diag: Pełne sprawdzenie systemu (CV + AI)
+	@echo "$(BLUE)Diagnostics: Full system check...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/diagnostics.yaml full_system_check --no-recording
+
+test-diag-recovery: ## Diag: Auto-recovery (spróbuj odblokować)
+	@echo "$(BLUE)Diagnostics: Auto-recovery...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/diagnostics.yaml auto_recovery --no-recording
+
+list-diag-tests: ## Pokaż listę testów diagnostycznych
+	@echo "$(BLUE)Dostępne testy diagnostyczne:$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/diagnostics.yaml dummy --list || true
+
+# ===================================
 
 test-terminal: ## Uruchom test terminala (z nagrywaniem wideo)
 	@echo "$(BLUE)Test terminala...$(NC)"

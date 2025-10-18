@@ -279,6 +279,72 @@ class CVDetector:
         
         return None
     
+    def is_screen_blank(self, img: np.ndarray, threshold: int = 30) -> bool:
+        """
+        Sprawdź czy ekran jest pusty/czarny/zablokowany
+        
+        Args:
+            img: Obraz wejściowy
+            threshold: Próg jasności (0-255)
+            
+        Returns:
+            True jeśli ekran jest prawie całkowicie czarny
+        """
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        mean_brightness = np.mean(gray)
+        
+        # Sprawdź czy większość pikseli jest ciemna
+        dark_pixels = np.sum(gray < threshold)
+        total_pixels = gray.size
+        dark_ratio = dark_pixels / total_pixels
+        
+        return mean_brightness < threshold and dark_ratio > 0.9
+    
+    def get_screen_diagnostics(self, img: np.ndarray) -> Dict:
+        """
+        Diagnostyka ekranu - co może być nie tak?
+        
+        Returns:
+            Słownik z diagnostyką
+        """
+        diagnostics = {
+            'is_blank': False,
+            'mean_brightness': 0,
+            'has_content': False,
+            'edge_count': 0,
+            'possible_issue': None
+        }
+        
+        # Sprawdź jasność
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        mean_brightness = np.mean(gray)
+        diagnostics['mean_brightness'] = float(mean_brightness)
+        
+        # Sprawdź czy ekran jest pusty
+        diagnostics['is_blank'] = self.is_screen_blank(img)
+        
+        # Policz krawędzie (content detection)
+        edges = self.detect_edges(img)
+        edge_count = np.sum(edges > 0)
+        diagnostics['edge_count'] = int(edge_count)
+        
+        # Określ czy jest content
+        diagnostics['has_content'] = edge_count > 1000
+        
+        # Diagnoza problemu
+        if diagnostics['is_blank']:
+            diagnostics['possible_issue'] = "Screen is blank/black - possible lock screen or VNC not connected"
+        elif mean_brightness < 50:
+            diagnostics['possible_issue'] = "Screen is very dark - possible screensaver or lock screen"
+        elif edge_count < 500:
+            diagnostics['possible_issue'] = "Very few edges detected - possible empty desktop or loading screen"
+        elif edge_count < 1000:
+            diagnostics['possible_issue'] = "Low content - desktop may be minimalist or partially loaded"
+        else:
+            diagnostics['possible_issue'] = None
+        
+        return diagnostics
+    
     def quick_analysis(self, img: np.ndarray) -> Dict:
         """
         Szybka analiza obrazu (milisekundy!)
@@ -294,8 +360,12 @@ class CVDetector:
             'has_text_field': False,
             'text_field_position': None,
             'window_count': 0,
-            'unlock_button': None
+            'unlock_button': None,
+            'diagnostics': {}
         }
+        
+        # Dodaj diagnostykę
+        results['diagnostics'] = self.get_screen_diagnostics(img)
         
         # Wykryj dialog
         dialog = self.detect_dialog_box(img)

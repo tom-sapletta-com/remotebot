@@ -536,6 +536,19 @@ class AutomationEngine:
                     elapsed = (time.time() - start) * 1000  # ms
                     
                     print(f"  ✓ Analysis done in {elapsed:.1f}ms")
+                    
+                    # Pokaż diagnostykę jeśli są problemy
+                    diagnostics = results.get('diagnostics', {})
+                    if diagnostics.get('possible_issue'):
+                        print(f"  ⚠️  Screen Issue Detected:")
+                        print(f"    Brightness: {diagnostics['mean_brightness']:.1f}/255")
+                        print(f"    Edge count: {diagnostics['edge_count']}")
+                        print(f"    Is blank: {diagnostics['is_blank']}")
+                        print(f"    Problem: {diagnostics['possible_issue']}")
+                    else:
+                        print(f"    Screen brightness: {diagnostics.get('mean_brightness', 0):.1f}/255")
+                        print(f"    Content detected: {diagnostics.get('has_content', False)}")
+                    
                     print(f"    Dialog: {results['has_dialog']}")
                     print(f"    Buttons: {len(results['button_positions'])}")
                     print(f"    Text field: {results['has_text_field']}")
