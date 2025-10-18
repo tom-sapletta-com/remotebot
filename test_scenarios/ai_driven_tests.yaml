@@ -1,0 +1,660 @@
+# AI-Driven Test Scenarios - Inteligentne testy z zaawansowaną analizą wizyjną
+# Te testy używają AI do podejmowania decyzji i adaptacyjnego sterowania
+
+connection:
+  protocol: vnc
+  host: vnc-desktop
+  port: 5901
+  password: automation
+
+ollama:
+  url: http://ollama:11434
+  model: llava:7b
+
+scenarios:
+  
+  # ===================================
+  # Adaptacyjna nawigacja - AI znajduje i klika elementy
+  # ===================================
+  adaptive_firefox_navigation:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    # AI analizuje pulpit i znajduje Firefox
+    - action: analyze
+      question: "Can you see the Firefox browser icon on the desktop? Answer only YES or NO."
+      save_to: firefox_visible
+    
+    - action: find_and_click
+      element: "Firefox browser icon"
+    
+    - action: wait
+      seconds: 5
+    
+    # Sprawdź czy Firefox się otworzył
+    - action: analyze
+      question: "Is Firefox browser window now open and visible? Answer YES or NO."
+      save_to: firefox_opened
+    
+    # Nawiguj do strony testowej
+    - action: key
+      key: ctrl+l
+    
+    - action: type
+      text: "https://example.com"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 4
+    
+    # AI analizuje zawartość strony
+    - action: analyze
+      question: "What is the main heading text on this webpage? Extract just the heading text."
+      save_to: page_heading
+    
+    - action: analyze
+      question: "Is there a 'More information' link visible on the page? Answer YES or NO."
+      save_to: has_more_info_link
+    
+    # Jeśli jest link, AI go znajdzie i kliknie
+    - action: find_and_click
+      element: "More information link"
+    
+    - action: wait
+      seconds: 3
+    
+    - action: analyze
+      question: "What is the URL of the current page? Just write the URL."
+      save_to: current_url
+    
+    - action: disconnect
+
+  # ===================================
+  # Inteligentne wyszukiwanie - AI czyta wyniki i wybiera najlepszy
+  # ===================================
+  smart_search_and_select:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    - action: find_and_click
+      element: "Firefox icon"
+    
+    - action: wait
+      seconds: 4
+    
+    # Otwórz Google
+    - action: key
+      key: ctrl+l
+    
+    - action: type
+      text: "https://www.google.com"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 3
+    
+    # Znajdź pole wyszukiwania
+    - action: find_and_click
+      element: "search box or search field"
+    
+    - action: wait
+      seconds: 1
+    
+    - action: type
+      text: "python automation testing"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 4
+    
+    # AI analizuje wyniki wyszukiwania
+    - action: analyze
+      question: "List the titles of the first 3 search results visible on this page."
+      save_to: search_results
+    
+    - action: analyze
+      question: "Which search result mentions 'Selenium' or 'pytest'? Give me the position number (1st, 2nd, or 3rd)."
+      save_to: relevant_result
+    
+    - action: disconnect
+
+  # ===================================
+  # Desktop Explorer - AI mapuje i dokumentuje pulpit
+  # ===================================
+  desktop_mapper:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    # Analiza pełna pulpitu
+    - action: screenshot
+      name: "desktop_full"
+    
+    - action: analyze
+      question: "Create a detailed inventory of all visible desktop icons. List them with their approximate positions (top-left, top-center, etc.)."
+      save_to: desktop_inventory
+    
+    - action: analyze
+      question: "What is the desktop environment or window manager being used? (XFCE, GNOME, KDE, etc.)"
+      save_to: desktop_environment
+    
+    - action: analyze
+      question: "What is visible in the taskbar/panel at the top or bottom? List all icons and widgets."
+      save_to: taskbar_contents
+    
+    # Kliknij prawym na pulpit (jeśli możliwe)
+    - action: click_position
+      position: "center"
+    
+    - action: wait
+      seconds: 1
+    
+    - action: analyze
+      question: "Did a context menu appear? If yes, what options are visible?"
+      save_to: context_menu
+    
+    # Zamknij menu
+    - action: key
+      key: esc
+    
+    - action: disconnect
+
+  # ===================================
+  # Application State Monitor - AI monitoruje zmiany
+  # ===================================
+  application_state_monitor:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    # Stan początkowy
+    - action: screenshot
+      name: "state_initial"
+    
+    - action: analyze
+      question: "List all visible application windows and their approximate sizes."
+      save_to: state_1_windows
+    
+    # Otwórz aplikację
+    - action: find_and_click
+      element: "Terminal icon"
+    
+    - action: wait
+      seconds: 3
+    
+    - action: screenshot
+      name: "state_after_terminal"
+    
+    - action: analyze
+      question: "What changed on screen after opening terminal? Describe the new window."
+      save_to: state_2_changes
+    
+    # Uruchom komendę
+    - action: type
+      text: "htop"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 2
+    
+    - action: screenshot
+      name: "state_htop_running"
+    
+    - action: analyze
+      question: "Is htop running? What are the top 3 processes by CPU usage?"
+      save_to: state_3_htop
+    
+    - action: key
+      key: q
+    
+    - action: wait
+      seconds: 1
+    
+    - action: analyze
+      question: "Did htop close? Is terminal prompt visible again?"
+      save_to: state_4_closed
+    
+    - action: disconnect
+
+  # ===================================
+  # Text Editor Workflow - AI weryfikuje edycję
+  # ===================================
+  intelligent_text_editing:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    # Otwórz edytor tekstu
+    - action: find_and_click
+      element: "Text Editor or text editor icon"
+    
+    - action: wait
+      seconds: 3
+    
+    - action: analyze
+      question: "Is a text editor window open and ready for input?"
+      save_to: editor_ready
+    
+    # Napisz kod Python
+    - action: type
+      text: "#!/usr/bin/env python3"
+    
+    - action: key
+      key: enter
+    
+    - action: type
+      text: "def hello():"
+    
+    - action: key
+      key: enter
+    
+    - action: type
+      text: "    print('Hello from AI automation!')"
+    
+    - action: key
+      key: enter
+    
+    - action: key
+      key: enter
+    
+    - action: type
+      text: "hello()"
+    
+    - action: wait
+      seconds: 1
+    
+    - action: screenshot
+      name: "code_written"
+    
+    # AI weryfikuje kod
+    - action: analyze
+      question: "Can you read the Python code visible in the editor? Does it have proper syntax? Is the indentation correct?"
+      save_to: code_validation
+    
+    - action: analyze
+      question: "What does this code do when executed?"
+      save_to: code_functionality
+    
+    - action: disconnect
+
+  # ===================================
+  # File Manager Navigation - AI znajduje pliki
+  # ===================================
+  smart_file_navigation:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    - action: find_and_click
+      element: "File Manager or folder icon"
+    
+    - action: wait
+      seconds: 3
+    
+    - action: analyze
+      question: "What directory or folder is currently open in the file manager?"
+      save_to: current_directory
+    
+    - action: analyze
+      question: "List all visible files and folders in the current view."
+      save_to: directory_contents
+    
+    # Sprawdź czy istnieje folder Documents
+    - action: analyze
+      question: "Is there a 'Documents' folder visible? Answer YES or NO."
+      save_to: has_documents
+    
+    # Sprawdź czy istnieje folder Desktop
+    - action: analyze
+      question: "Is there a 'Desktop' folder visible? Answer YES or NO."
+      save_to: has_desktop
+    
+    - action: disconnect
+
+  # ===================================
+  # Dynamic Form Filling - AI rozpoznaje pola formularza
+  # ===================================
+  smart_form_interaction:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    - action: find_and_click
+      element: "Firefox"
+    
+    - action: wait
+      seconds: 4
+    
+    - action: key
+      key: ctrl+l
+    
+    - action: type
+      text: "https://www.w3schools.com/html/html_forms.asp"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 5
+    
+    # AI analizuje formularz
+    - action: analyze
+      question: "How many input fields or form elements are visible on this page?"
+      save_to: form_field_count
+    
+    - action: analyze
+      question: "What types of input fields are there? (text boxes, checkboxes, buttons, etc.)"
+      save_to: form_field_types
+    
+    - action: analyze
+      question: "Is there a submit button visible? What is its text label?"
+      save_to: submit_button
+    
+    - action: disconnect
+
+  # ===================================
+  # Error Detection - AI wykrywa błędy i anomalie
+  # ===================================
+  intelligent_error_detection:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    - action: find_and_click
+      element: "Terminal"
+    
+    - action: wait
+      seconds: 3
+    
+    # Wykonaj komendę która zwróci błąd
+    - action: type
+      text: "python -c 'import nonexistent_module'"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 2
+    
+    - action: screenshot
+      name: "error_screen"
+    
+    - action: analyze
+      question: "Is there an error message visible? If yes, what type of error is it?"
+      save_to: error_type
+    
+    - action: analyze
+      question: "What is the exact error message text?"
+      save_to: error_message
+    
+    - action: analyze
+      question: "Based on the error, what is the likely cause and how could it be fixed?"
+      save_to: error_diagnosis
+    
+    # Test czy terminal nadal działa
+    - action: type
+      text: "echo 'System still working'"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 1
+    
+    - action: analyze
+      question: "Did the echo command execute successfully? Is the terminal still functional?"
+      save_to: system_recovery
+    
+    - action: disconnect
+
+  # ===================================
+  # Multi-Window Management - AI śledzi wiele okien
+  # ===================================
+  window_management_test:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    # Stan początkowy
+    - action: analyze
+      question: "How many windows are currently open on the desktop?"
+      save_to: initial_window_count
+    
+    # Otwórz Terminal
+    - action: find_and_click
+      element: "Terminal"
+    
+    - action: wait
+      seconds: 2
+    
+    - action: analyze
+      question: "How many windows are now open? What are they?"
+      save_to: after_terminal_windows
+    
+    # Otwórz Firefox
+    - action: find_and_click
+      element: "Firefox"
+    
+    - action: wait
+      seconds: 4
+    
+    - action: analyze
+      question: "How many windows are visible now? Which window is in the foreground (active)?"
+      save_to: multiple_windows_state
+    
+    # Przełącz okna
+    - action: key
+      key: alt+tab
+    
+    - action: wait
+      seconds: 1
+    
+    - action: analyze
+      question: "After pressing Alt+Tab, which window is now active?"
+      save_to: window_after_switch
+    
+    - action: disconnect
+
+  # ===================================
+  # Visual Regression - AI porównuje stany
+  # ===================================
+  visual_change_detection:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    - action: screenshot
+      name: "baseline"
+    
+    - action: analyze
+      question: "Describe the current desktop state in detail: colors, icons, windows, taskbar."
+      save_to: baseline_state
+    
+    # Otwórz aplikację
+    - action: find_and_click
+      element: "Firefox"
+    
+    - action: wait
+      seconds: 4
+    
+    - action: screenshot
+      name: "after_change"
+    
+    - action: analyze
+      question: "Compare with the previous state: what visual changes occurred? Describe differences in layout, colors, and elements."
+      save_to: visual_diff
+    
+    - action: analyze
+      question: "Did any unexpected elements appear? Are there any visual glitches or rendering issues?"
+      save_to: anomaly_detection
+    
+    - action: disconnect
+
+  # ===================================
+  # System Resource Monitor - AI czyta wydajność
+  # ===================================
+  ai_performance_monitor:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    - action: find_and_click
+      element: "Terminal"
+    
+    - action: wait
+      seconds: 2
+    
+    - action: type
+      text: "top -bn1 | head -20"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 2
+    
+    - action: screenshot
+      name: "top_output"
+    
+    - action: analyze
+      question: "What is the current CPU usage percentage? Which process is using the most CPU?"
+      save_to: cpu_analysis
+    
+    - action: analyze
+      question: "What is the memory usage? How much RAM is available vs used?"
+      save_to: memory_analysis
+    
+    - action: analyze
+      question: "Are there any processes consuming unusually high resources?"
+      save_to: resource_anomalies
+    
+    - action: type
+      text: "df -h | grep -E '^/dev/'"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 1
+    
+    - action: analyze
+      question: "What is the disk usage for the main filesystem? Is disk space running low?"
+      save_to: disk_analysis
+    
+    - action: disconnect
+
+  # ===================================
+  # Screenshot-Based Testing - AI weryfikuje UI
+  # ===================================
+  ui_validation_test:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    - action: find_and_click
+      element: "Firefox"
+    
+    - action: wait
+      seconds: 4
+    
+    - action: key
+      key: ctrl+l
+    
+    - action: type
+      text: "https://example.com"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 3
+    
+    - action: screenshot
+      name: "example_page"
+    
+    # Szczegółowa analiza UI
+    - action: analyze
+      question: "Analyze the page layout: Is there a clear visual hierarchy? Are headings distinguishable from body text?"
+      save_to: layout_quality
+    
+    - action: analyze
+      question: "What is the color scheme? Are there any accessibility concerns with color contrast?"
+      save_to: color_analysis
+    
+    - action: analyze
+      question: "Are all text elements readable? Is the font size appropriate?"
+      save_to: readability_check
+    
+    - action: analyze
+      question: "Are there any UI elements that appear broken, misaligned, or cut off?"
+      save_to: ui_issues
+    
+    - action: disconnect
+
+  # ===================================
+  # Command Output Parser - AI czyta wyniki komend
+  # ===================================
+  command_output_analysis:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    - action: find_and_click
+      element: "Terminal"
+    
+    - action: wait
+      seconds: 2
+    
+    # Test sieciowy
+    - action: type
+      text: "ip addr show | grep inet"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 1
+    
+    - action: analyze
+      question: "What IP addresses are shown? List all IPv4 addresses visible."
+      save_to: ip_addresses
+    
+    # Info o systemie
+    - action: type
+      text: "uname -a"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 1
+    
+    - action: analyze
+      question: "What operating system and kernel version is reported?"
+      save_to: os_version
+    
+    # Czas działania
+    - action: type
+      text: "uptime"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 1
+    
+    - action: analyze
+      question: "How long has the system been running? What is the load average?"
+      save_to: uptime_info
+    
+    - action: disconnect

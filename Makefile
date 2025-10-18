@@ -110,6 +110,83 @@ test-debug-screenshots: ## Debug - zbieraj screenshoty co 1s przez 5s
 	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/test_firefox_simple.yaml test_debug_screenshots --no-recording
 	@echo "$(GREEN)✓ Screenshoty zapisane w: results/screenshots/$(NC)"
 
+# ===================================
+# AI-Driven Tests - Zaawansowane testy z AI
+# ===================================
+
+test-ai-adaptive: ## AI: Adaptacyjna nawigacja Firefox
+	@echo "$(BLUE)AI Test: Adaptacyjna nawigacja...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/ai_driven_tests.yaml adaptive_firefox_navigation --no-recording
+
+test-ai-search: ## AI: Inteligentne wyszukiwanie i selekcja
+	@echo "$(BLUE)AI Test: Smart search...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/ai_driven_tests.yaml smart_search_and_select --no-recording
+
+test-ai-desktop-mapper: ## AI: Mapowanie pulpitu
+	@echo "$(BLUE)AI Test: Desktop mapper...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/ai_driven_tests.yaml desktop_mapper --no-recording
+
+test-ai-monitor: ## AI: Monitor stanu aplikacji
+	@echo "$(BLUE)AI Test: Application state monitor...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/ai_driven_tests.yaml application_state_monitor --no-recording
+
+test-ai-editor: ## AI: Inteligentna edycja tekstu
+	@echo "$(BLUE)AI Test: Text editing + validation...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/ai_driven_tests.yaml intelligent_text_editing --no-recording
+
+test-ai-files: ## AI: Nawigacja plików
+	@echo "$(BLUE)AI Test: File navigation...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/ai_driven_tests.yaml smart_file_navigation --no-recording
+
+test-ai-forms: ## AI: Rozpoznawanie formularzy
+	@echo "$(BLUE)AI Test: Form interaction...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/ai_driven_tests.yaml smart_form_interaction --no-recording
+
+test-ai-errors: ## AI: Detekcja i diagnoza błędów
+	@echo "$(BLUE)AI Test: Error detection...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/ai_driven_tests.yaml intelligent_error_detection --no-recording
+
+test-ai-windows: ## AI: Zarządzanie wieloma oknami
+	@echo "$(BLUE)AI Test: Multi-window management...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/ai_driven_tests.yaml window_management_test --no-recording
+
+test-ai-visual: ## AI: Detekcja zmian wizualnych
+	@echo "$(BLUE)AI Test: Visual regression...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/ai_driven_tests.yaml visual_change_detection --no-recording
+
+test-ai-performance: ## AI: Monitoring wydajności
+	@echo "$(BLUE)AI Test: Performance monitor...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/ai_driven_tests.yaml ai_performance_monitor --no-recording
+
+test-ai-ui: ## AI: Walidacja UI
+	@echo "$(BLUE)AI Test: UI validation...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/ai_driven_tests.yaml ui_validation_test --no-recording
+
+test-ai-commands: ## AI: Analiza wyników komend
+	@echo "$(BLUE)AI Test: Command output analysis...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/ai_driven_tests.yaml command_output_analysis --no-recording
+
+test-ai-all: ## AI: Uruchom wszystkie testy AI (może zająć 10-30min)
+	@echo "$(YELLOW)⚠️  Uruchamianie wszystkich testów AI - to może zająć 10-30 minut!$(NC)"
+	@$(MAKE) --no-print-directory test-ai-adaptive
+	@$(MAKE) --no-print-directory test-ai-desktop-mapper
+	@$(MAKE) --no-print-directory test-ai-monitor
+	@$(MAKE) --no-print-directory test-ai-editor
+	@$(MAKE) --no-print-directory test-ai-files
+	@$(MAKE) --no-print-directory test-ai-errors
+	@$(MAKE) --no-print-directory test-ai-windows
+	@$(MAKE) --no-print-directory test-ai-visual
+	@$(MAKE) --no-print-directory test-ai-performance
+	@$(MAKE) --no-print-directory test-ai-ui
+	@$(MAKE) --no-print-directory test-ai-commands
+	@echo "$(GREEN)✓ Wszystkie testy AI zakończone!$(NC)"
+
+list-ai-tests: ## Pokaż listę testów AI
+	@echo "$(BLUE)Dostępne testy AI:$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/ai_driven_tests.yaml dummy --list || true
+
+# ===================================
+
 test-terminal: ## Uruchom test terminala (z nagrywaniem wideo)
 	@echo "$(BLUE)Test terminala...$(NC)"
 	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/test_basic.yaml test_terminal
@@ -161,6 +238,16 @@ info: ## Pokaż informacje o dostępie
 	@echo "   make test-firefox-ai-debug - Firefox AI + screenshoty"
 	@echo "   make test-basic          - Podstawowy test (z AI, 30-60s)"
 	@echo "   make test                - Pełny test suite"
+	@echo ""
+	@echo "$(YELLOW)🤖 Testy AI-Driven:$(NC)"
+	@echo "   make list-ai-tests       - Lista wszystkich testów AI"
+	@echo "   make test-ai-adaptive    - Adaptacyjna nawigacja Firefox"
+	@echo "   make test-ai-desktop-mapper - AI mapuje pulpit"
+	@echo "   make test-ai-monitor     - Monitor stanu aplikacji"
+	@echo "   make test-ai-editor      - Inteligentna edycja tekstu"
+	@echo "   make test-ai-errors      - Detekcja i diagnoza błędów"
+	@echo "   make test-ai-performance - Monitoring wydajności systemu"
+	@echo "   make test-ai-all         - Wszystkie testy AI (10-30min)"
 	@echo ""
 	@echo "$(YELLOW)🎬 Nagrania testów:$(NC)"
 	@echo "   Lokalizacja: $(BLUE)results/videos/$(NC)"

@@ -4,6 +4,8 @@ Run Scenario - uruchamia scenariusze testowe z opcjonalnym nagrywaniem wideo
 """
 
 import sys
+import time
+import threading
 import yaml
 import argparse
 from pathlib import Path
@@ -127,22 +129,15 @@ def run_scenario(scenario_file: Path, scenario_name: str, enable_recording: bool
         return False
     
     finally:
-        # Zawsze zamknij połączenie i wyczyść zasoby
-        if controller is not None:
+        # execute_dsl() już obsługuje cleanup w swoim finally,
+        # więc tutaj tylko upewniamy się, że wszystko jest zamknięte
+        # (dla przypadków gdy execute_dsl nie został wywołany)
+        if controller is not None and controller.connection is not None:
             try:
                 controller.disconnect()
                 print("\n🔌 Połączenie zamknięte")
             except Exception as e:
-                print(f"\n⚠️  Błąd podczas zamykania połączenia: {e}")
-        
-        # Wyczyść zasoby engine (jeśli są jakieś)
-        if engine is not None and hasattr(engine, 'recorder') and engine.recorder:
-            try:
-                # Upewnij się, że nagrywanie jest zatrzymane
-                if hasattr(engine.recorder, 'is_recording') and engine.recorder.is_recording:
-                    engine.recorder.stop_recording()
-            except Exception as e:
-                print(f"⚠️  Błąd podczas czyszczenia zasobów nagrywania: {e}")
+                pass  # Ignoruj błędy - może już być zamknięte
 
 
 def main():

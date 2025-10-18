@@ -9,6 +9,9 @@ import io
 import time
 import json
 import requests
+import sys
+import os
+import threading
 from datetime import datetime
 from pathlib import Path
 from PIL import Image
@@ -273,17 +276,39 @@ class RemoteController:
         """Rozłącza połączenie"""
         if self.connection:
             try:
-                if hasattr(self.connection, 'disconnect'):
+                # Dla VNC (vncdotool) użyj prawidłowej sekwencji zamykania
+                if self.protocol == "vnc":
+                    # vncdotool wymaga wywołania disconnect() i zamknięcia protokołu
+                    if hasattr(self.connection, 'disconnect'):
+                        self.connection.disconnect()
+                    
+                    # Zatrzymaj wątki Twisted (vncdotool używa Twisted)
+                    if hasattr(self.connection, 'transport') and self.connection.transport:
+                        try:
+                            self.connection.transport.loseConnection()
+                        except Exception:
+                            pass
+                    
+                    # Dodatkowe wywołania dla pełnego zamknięcia
+                    if hasattr(self.connection, 'close'):
+                        self.connection.close()
+                    
+                    # Daj chwilę na zakończenie wątków
+                    time.sleep(0.1)
+                    
+                    # Spróbuj zatrzymać reaktor Twisted jeśli nadal działa
+                    try:
+                        from twisted.internet import reactor
+                        if reactor.running:
+                            reactor.callFromThread(reactor.stop)
+                    except Exception:
+                        pass
+                    
+                elif hasattr(self.connection, 'disconnect'):
                     self.connection.disconnect()
                 elif hasattr(self.connection, 'terminate'):
                     self.connection.terminate()
                 
-                # Dla VNC upewnij się, że połączenie jest zamknięte
-                if self.protocol == "vnc":
-                    if hasattr(self.connection, 'close'):
-                        self.connection.close()
-                    # Wymuś zakończenie połączenia
-                    self.connection = None
             except Exception as e:
                 print(f"⚠️  Błąd podczas zamykania połączenia: {e}")
             finally:
@@ -505,6 +530,17 @@ class AutomationEngine:
                     self.controller.disconnect()
             except Exception as e:
                 pass  # Ignoruj błędy, bo może już być rozłączone
+            
+            # Wymuszenie zakończenia jeśli wątki w tle nadal działają
+            # vncdotool/Twisted mogą zostawić wątki demona
+            time.sleep(0.2)  # Daj chwilę na naturalne zakończenie
+            
+            # Sprawdź czy zostały wątki demona (poza głównym)
+            active_threads = [t for t in threading.enumerate() if t.is_alive() and t != threading.main_thread()]
+            if active_threads and self.controller.protocol == "vnc":
+                # Są wątki w tle - wymuszamy zakończenie dla VNC/Twisted
+                print("\n🔌 Połączenie zamknięte")
+                os._exit(0)  # Twardy exit, bo Twisted nie chce się zamknąć
             
             return recording_stats
 
