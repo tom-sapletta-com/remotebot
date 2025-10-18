@@ -1,0 +1,252 @@
+# config.yaml - Przykładowe scenariusze automatyzacji
+
+# Konfiguracja połączenia
+connection:
+  protocol: vnc  # vnc, rdp, spice
+  host: localhost
+  port: 5900
+  username: ""
+  password: ""
+
+# Konfiguracja Ollama
+ollama:
+  url: http://localhost:11434
+  model: llava:7b  # Modele: llava:7b, llava:13b, moondream, bakllava
+
+# Scenariusze automatyzacji
+scenarios:
+  
+  # Scenariusz 1: Otwórz przeglądarkę i wyszukaj
+  browser_search:
+    - action: connect
+    
+    - action: wait
+      seconds: 2
+    
+    - action: find_and_click
+      element: "Chrome or Firefox browser icon on desktop"
+    
+    - action: wait
+      seconds: 3
+    
+    - action: key
+      key: ctrl+l  # Przejdź do paska adresu
+    
+    - action: type
+      text: "python automation"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 2
+    
+    - action: verify
+      expected: "search results page is displayed"
+    
+    - action: disconnect
+
+  # Scenariusz 2: Terminal - sprawdź procesy
+  terminal_check:
+    - action: connect
+    
+    - action: find_and_click
+      element: "terminal or console application"
+    
+    - action: wait
+      seconds: 1
+    
+    - action: type
+      text: "top -n 1"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 2
+    
+    - action: analyze
+      question: "What are the top 3 processes by CPU usage?"
+      save_to: top_processes
+    
+    - action: type
+      text: "exit"
+    
+    - action: key
+      key: enter
+    
+    - action: disconnect
+
+  # Scenariusz 3: Zaloguj się do aplikacji webowej
+  web_login:
+    - action: connect
+    
+    - action: find_and_click
+      element: "browser icon"
+    
+    - action: wait
+      seconds: 2
+    
+    - action: find_and_click
+      element: "address bar"
+    
+    - action: type
+      text: "https://example.com/login"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 3
+    
+    - action: find_and_click
+      element: "username input field"
+    
+    - action: type
+      text: "user@example.com"
+    
+    - action: key
+      key: tab
+    
+    - action: type
+      text: "password123"
+    
+    - action: find_and_click
+      element: "login button"
+    
+    - action: wait
+      seconds: 2
+    
+    - action: verify
+      expected: "user is logged in and dashboard is visible"
+    
+    - action: disconnect
+
+  # Scenariusz 4: Analiza dokumentu
+  document_analysis:
+    - action: connect
+    
+    - action: find_and_click
+      element: "file manager or document viewer"
+    
+    - action: wait
+      seconds: 2
+    
+    - action: find_and_click
+      element: "specific document file"
+    
+    - action: wait
+      seconds: 3
+    
+    - action: analyze
+      question: "Summarize the main points of this document in 3 bullet points"
+      save_to: document_summary
+    
+    - action: analyze
+      question: "Are there any tables or charts visible? Describe them."
+      save_to: visual_elements
+    
+    - action: disconnect
+
+  # Scenariusz 5: Test formularza
+  form_testing:
+    - action: connect
+    
+    - action: find_and_click
+      element: "form or application with input fields"
+    
+    - action: wait
+      seconds: 2
+    
+    # Wypełnij pierwsze pole
+    - action: find_and_click
+      element: "first name input field"
+    
+    - action: type
+      text: "John"
+    
+    - action: key
+      key: tab
+    
+    # Wypełnij drugie pole
+    - action: type
+      text: "Doe"
+    
+    - action: key
+      key: tab
+    
+    # Sprawdź czy pola są wypełnione
+    - action: verify
+      expected: "form fields contain entered data"
+    
+    # Kliknij submit
+    - action: find_and_click
+      element: "submit or save button"
+    
+    - action: wait
+      seconds: 2
+    
+    # Weryfikuj sukces
+    - action: analyze
+      question: "Was the form submitted successfully? Look for success message or confirmation."
+      save_to: submission_result
+    
+    - action: disconnect
+
+  # Scenariusz 6: Monitoring aplikacji
+  app_monitoring:
+    - action: connect
+    
+    - action: wait
+      seconds: 1
+    
+    # Cykliczne sprawdzanie
+    - action: analyze
+      question: "Is the application responding? Are there any error messages?"
+      save_to: health_check_1
+    
+    - action: wait
+      seconds: 5
+    
+    - action: analyze
+      question: "Is the application responding? Are there any error messages?"
+      save_to: health_check_2
+    
+    - action: wait
+      seconds: 5
+    
+    - action: analyze
+      question: "Is the application responding? Are there any error messages?"
+      save_to: health_check_3
+    
+    - action: disconnect
+
+  # Scenariusz 7: Nawigacja w menu
+  menu_navigation:
+    - action: connect
+    
+    - action: find_and_click
+      element: "main menu or hamburger icon"
+    
+    - action: wait
+      seconds: 1
+    
+    - action: find_and_click
+      element: "Settings or Preferences option"
+    
+    - action: wait
+      seconds: 2
+    
+    - action: verify
+      expected: "Settings page or dialog is opened"
+    
+    - action: find_and_click
+      element: "specific setting or checkbox"
+    
+    - action: wait
+      seconds: 1
+    
+    - action: find_and_click
+      element: "Save or Apply button"
+    
+    - action: disconnect

@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  # VNC Desktop Environment
+  vnc-desktop:
+    build:
+      context: vnc
+      dockerfile: Dockerfile
+    container_name: automation-vnc
+    hostname: automation-desktop
+    ports:
+      - "${VNC_PORT:-5901}:5901"  # VNC port
+      - "${NO_VNC_PORT:-6080}:6080"  # noVNC (przeglądarka)
+    environment:
+      - DISPLAY=${DISPLAY:-:1}
+      - VNC_PASSWORD=${VNC_PASSWORD:-automation}
+      - VNC_GEOMETRY=${VNC_GEOMETRY:-1280x800}
+      - TZ=${TZ:-Europe/Warsaw}
+    volumes:
+      - ./shared:/home/automation/shared
+      - ./test_scenarios:/home/automation/test_scenarios
+    networks:
+      - automation-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "pgrep", "Xvnc"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Ollama dla AI Vision
+  ollama:
+    image: ollama/ollama:latest
+    container_name: automation-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - automation-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    # Automatycznie pobierz model przy starcie
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        ollama serve &
+        sleep 5
+        ollama pull llava:7b
+        wait
+
+  # Automation Controller - host dla skryptów automatyzacji
+  automation-controller:
+    build:
+      context: controller
+      dockerfile: Dockerfile.controller
+    container_name: automation-controller
+    depends_on:
+      - vnc-desktop
+      - ollama
+    environment:
+      - VNC_HOST=vnc-desktop
+      - VNC_PORT=5901
+      - VNC_PASSWORD=automation
+      - OLLAMA_HOST=http://ollama:11434
+    volumes:
+      - ./automation:/app
+      - ./shared:/app/shared
+      - ./test_scenarios:/app/test_scenarios
+      - ./results:/app/results
+    networks:
+      - automation-net
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+
+  # Web UI dla zarządzania (opcjonalnie)
+#  portainer:
+#    image: portainer/portainer-ce:latest
+#    container_name: automation-portainer
+#    ports:
+#      - "9000:9000"
+#    volumes:
+#      - /var/run/docker.sock:/var/run/docker.sock
+#      - portainer-data:/data
+#    networks:
+#      - automation-net
+#    restart: unless-stopped
+
+networks:
+  automation-net:
+    driver: bridge
+
+volumes:
+  ollama-data:
+  portainer-data:
