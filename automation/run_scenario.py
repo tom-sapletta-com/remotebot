@@ -56,6 +56,9 @@ def run_scenario(scenario_file: Path, scenario_name: str, enable_recording: bool
         print(f"🔍 Debug mode: WŁĄCZONY (screenshoty przed/po każdym kroku)")
     print()
     
+    controller = None
+    engine = None
+    
     try:
         # Inicjalizuj kontroler
         controller = RemoteController(
@@ -122,6 +125,24 @@ def run_scenario(scenario_file: Path, scenario_name: str, enable_recording: bool
         import traceback
         traceback.print_exc()
         return False
+    
+    finally:
+        # Zawsze zamknij połączenie i wyczyść zasoby
+        if controller is not None:
+            try:
+                controller.disconnect()
+                print("\n🔌 Połączenie zamknięte")
+            except Exception as e:
+                print(f"\n⚠️  Błąd podczas zamykania połączenia: {e}")
+        
+        # Wyczyść zasoby engine (jeśli są jakieś)
+        if engine is not None and hasattr(engine, 'recorder') and engine.recorder:
+            try:
+                # Upewnij się, że nagrywanie jest zatrzymane
+                if hasattr(engine.recorder, 'is_recording') and engine.recorder.is_recording:
+                    engine.recorder.stop_recording()
+            except Exception as e:
+                print(f"⚠️  Błąd podczas czyszczenia zasobów nagrywania: {e}")
 
 
 def main():

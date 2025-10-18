@@ -242,8 +242,26 @@ class RemoteController:
     def capture_screen(self) -> Image.Image:
         """Przechwytuje screenshot"""
         if self.protocol == "vnc" and self.connection:
-            self.connection.captureScreen('temp_screen.png')
-            return Image.open('temp_screen.png')
+            import tempfile
+            import os
+            
+            # Użyj tymczasowego pliku, który zostanie automatycznie usunięty
+            with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
+                tmp_path = tmp.name
+            
+            try:
+                self.connection.captureScreen(tmp_path)
+                # Wczytaj obraz do pamięci i zamknij plik
+                with Image.open(tmp_path) as img:
+                    # Skopiuj obraz do pamięci, aby móc zamknąć plik
+                    screenshot = img.copy()
+                return screenshot
+            finally:
+                # Usuń tymczasowy plik
+                try:
+                    os.unlink(tmp_path)
+                except Exception:
+                    pass
         else:
             if ImageGrab:
                 return ImageGrab.grab()
@@ -254,10 +272,22 @@ class RemoteController:
     def disconnect(self):
         """Rozłącza połączenie"""
         if self.connection:
-            if hasattr(self.connection, 'disconnect'):
-                self.connection.disconnect()
-            elif hasattr(self.connection, 'terminate'):
-                self.connection.terminate()
+            try:
+                if hasattr(self.connection, 'disconnect'):
+                    self.connection.disconnect()
+                elif hasattr(self.connection, 'terminate'):
+                    self.connection.terminate()
+                
+                # Dla VNC upewnij się, że połączenie jest zamknięte
+                if self.protocol == "vnc":
+                    if hasattr(self.connection, 'close'):
+                        self.connection.close()
+                    # Wymuś zakończenie połączenia
+                    self.connection = None
+            except Exception as e:
+                print(f"⚠️  Błąd podczas zamykania połączenia: {e}")
+            finally:
+                self.connection = None
 
 
 class AutomationEngine:
@@ -466,9 +496,15 @@ class AutomationEngine:
             if self.enable_recording and self.recorder:
                 try:
                     recording_stats = self.recorder.stop_recording()
-                    return recording_stats
                 except Exception as e:
                     print(f"⚠️  Błąd zatrzymania nagrywania: {e}")
+            
+            # Zawsze rozłącz połączenie jako zabezpieczenie
+            try:
+                if self.controller and self.controller.connection:
+                    self.controller.disconnect()
+            except Exception as e:
+                pass  # Ignoruj błędy, bo może już być rozłączone
             
             return recording_stats
 
