@@ -15,6 +15,8 @@ import threading
 from datetime import datetime
 from pathlib import Path
 from PIL import Image
+import cv2
+import numpy as np
 try:
     from PIL import ImageGrab
 except ImportError:
@@ -22,6 +24,14 @@ except ImportError:
 from typing import Dict, List, Optional
 import subprocess
 import re
+
+# Import CV Detection module
+try:
+    from cv_detection import CVDetector
+    CV_AVAILABLE = True
+except ImportError:
+    CV_AVAILABLE = False
+    print("⚠️  cv_detection not available")
 
 # Try to import pynput, but don't fail if it's not available
 try:
@@ -330,6 +340,13 @@ class AutomationEngine:
         self.screenshot_dir = Path('/app/results/screenshots')
         self.screenshot_dir.mkdir(parents=True, exist_ok=True)
         
+        # Initialize CV Detector
+        if CV_AVAILABLE:
+            self.cv_detector = CVDetector()
+            self.cv_detector.set_debug(debug_mode)
+        else:
+            self.cv_detector = None
+        
         if enable_recording:
             try:
                 from screen_recorder import ScreenRecorder
@@ -501,6 +518,113 @@ class AutomationEngine:
                 elif action == 'disconnect':
                     self.controller.disconnect()
                     self.log("Disconnected", "INFO")
+                
+                # ===== CV Detection Actions (Fast!) =====
+                
+                elif action == 'cv_detect':
+                    # Szybka detekcja okien, przycisków, dialogów (milisekundy!)
+                    if not CV_AVAILABLE or not self.cv_detector:
+                        print("  ⚠️  CV Detection not available")
+                        continue
+                    
+                    screen = self.controller.capture_screen()
+                    img_cv = cv2.cvtColor(np.array(screen), cv2.COLOR_RGB2BGR)
+                    
+                    print("  🔍 CV Detection (fast)...")
+                    start = time.time()
+                    results = self.cv_detector.quick_analysis(img_cv)
+                    elapsed = (time.time() - start) * 1000  # ms
+                    
+                    print(f"  ✓ Analysis done in {elapsed:.1f}ms")
+                    print(f"    Dialog: {results['has_dialog']}")
+                    print(f"    Buttons: {len(results['button_positions'])}")
+                    print(f"    Text field: {results['has_text_field']}")
+                    print(f"    Windows: {results['window_count']}")
+                    if results['unlock_button']:
+                        print(f"    Unlock button at: {results['unlock_button']}")
+                    
+                    # Zapisz do zmiennych
+                    var_prefix = step.get('save_to', 'cv')
+                    for key, value in results.items():
+                        self.variables[f"{var_prefix}_{key}"] = value
+                
+                elif action == 'cv_find_dialog':
+                    # Znajdź centrum dialog box
+                    if not CV_AVAILABLE or not self.cv_detector:
+                        print("  ⚠️  CV Detection not available")
+                        continue
+                    
+                    screen = self.controller.capture_screen()
+                    img_cv = cv2.cvtColor(np.array(screen), cv2.COLOR_RGB2BGR)
+                    
+                    dialog = self.cv_detector.detect_dialog_box(img_cv)
+                    if dialog:
+                        center = dialog['center']
+                        print(f"  ✓ Dialog found at: {center}")
+                        
+                        # Auto-click jeśli podano
+                        if step.get('click', False):
+                            self.controller.click(center[0], center[1])
+                            print(f"  ✓ Clicked dialog center")
+                        
+                        var_name = step.get('save_to')
+                        if var_name:
+                            self.variables[var_name] = center
+                    else:
+                        print(f"  ✗ No dialog found")
+                
+                elif action == 'cv_find_unlock':
+                    # Znajdź i kliknij przycisk Unlock/OK/Login
+                    if not CV_AVAILABLE or not self.cv_detector:
+                        print("  ⚠️  CV Detection not available")
+                        continue
+                    
+                    screen = self.controller.capture_screen()
+                    img_cv = cv2.cvtColor(np.array(screen), cv2.COLOR_RGB2BGR)
+                    
+                    print("  🔍 Looking for Unlock button...")
+                    unlock_pos = self.cv_detector.find_unlock_button(img_cv)
+                    
+                    if unlock_pos:
+                        print(f"  ✓ Unlock button found at: {unlock_pos}")
+                        
+                        # Auto-click jeśli nie podano click=false
+                        if step.get('click', True):
+                            self.controller.click(unlock_pos[0], unlock_pos[1])
+                            print(f"  ✓ Clicked Unlock button")
+                        
+                        var_name = step.get('save_to')
+                        if var_name:
+                            self.variables[var_name] = unlock_pos
+                    else:
+                        print(f"  ✗ Unlock button not found")
+                        error_msg = "Unlock button not found"
+                        self.errors.append(error_msg)
+                
+                elif action == 'cv_find_text_field':
+                    # Znajdź pole tekstowe (input field)
+                    if not CV_AVAILABLE or not self.cv_detector:
+                        print("  ⚠️  CV Detection not available")
+                        continue
+                    
+                    screen = self.controller.capture_screen()
+                    img_cv = cv2.cvtColor(np.array(screen), cv2.COLOR_RGB2BGR)
+                    
+                    text_field = self.cv_detector.find_text_field(img_cv)
+                    
+                    if text_field:
+                        print(f"  ✓ Text field found at: {text_field}")
+                        
+                        # Auto-click jeśli podano
+                        if step.get('click', True):
+                            self.controller.click(text_field[0], text_field[1])
+                            print(f"  ✓ Clicked text field")
+                        
+                        var_name = step.get('save_to')
+                        if var_name:
+                            self.variables[var_name] = text_field
+                    else:
+                        print(f"  ✗ Text field not found")
                 
                 else:
                     self.log(f"Unknown action: {action}", "ERROR")

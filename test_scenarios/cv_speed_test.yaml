@@ -1,0 +1,222 @@
+# CV vs AI Speed Comparison
+# Pokazuje różnicę w szybkości między Computer Vision a AI Vision
+
+connection:
+  protocol: vnc
+  host: vnc-desktop
+  port: 5901
+  password: automation
+
+ollama:
+  url: http://ollama:11434
+  model: llava:7b
+
+scenarios:
+  
+  # ===================================
+  # CV Only - Super Fast (milisekundy!)
+  # ===================================
+  cv_fast_detection:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    # CV Detection - 100x szybsze niż AI!
+    - action: cv_detect
+      save_to: cv_results
+    
+    # Rezultaty są natychmiast dostępne w zmiennych:
+    # cv_results_has_dialog
+    # cv_results_dialog_center
+    # cv_results_button_positions
+    # cv_results_unlock_button
+    
+    - action: wait
+      seconds: 1
+    
+    - action: disconnect
+
+  # ===================================
+  # AI Only - Slow (sekundy)
+  # ===================================
+  ai_slow_detection:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    # AI Vision - 20-60s per query
+    - action: analyze
+      question: "Is there a dialog or window visible? Answer YES or NO."
+      save_to: ai_dialog_detected
+    
+    - action: analyze
+      question: "Can you see buttons? Answer YES or NO."
+      save_to: ai_buttons_detected
+    
+    - action: wait
+      seconds: 1
+    
+    - action: disconnect
+
+  # ===================================
+  # Hybrid - CV for speed, AI for verification
+  # ===================================
+  hybrid_best_of_both:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    # 1. Fast CV detection (milisekundy)
+    - action: cv_detect
+      save_to: cv
+    
+    # 2. AI verification tylko jeśli potrzeba (opcjonalne)
+    # Używamy AI tylko dla złożonych przypadków
+    
+    - action: disconnect
+
+  # ===================================
+  # CV Auto-Login - Fast unlock screen
+  # ===================================
+  cv_fast_unlock:
+    - action: connect
+    - action: wait
+      seconds: 3
+    
+    # Szybka detekcja lock screen (milisekundy!)
+    - action: cv_detect
+      save_to: lock
+    
+    # Znajdź pole tekstowe
+    - action: cv_find_text_field
+      click: true
+    
+    - action: wait
+      seconds: 0.5
+    
+    # Wpisz hasło
+    - action: type
+      text: "automation"
+    
+    - action: wait
+      seconds: 0.5
+    
+    # Znajdź i kliknij przycisk Unlock
+    - action: cv_find_unlock
+      click: true
+    
+    - action: wait
+      seconds: 3
+    
+    # Weryfikuj że desktop jest dostępny
+    - action: cv_detect
+      save_to: desktop
+    
+    - action: disconnect
+
+  # ===================================
+  # Speed Benchmark - CV vs AI
+  # ===================================
+  speed_benchmark:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    # Test 1: CV Speed (powinno być <100ms)
+    - action: screenshot
+      name: "before_cv_test"
+    
+    - action: cv_detect
+      save_to: cv_benchmark
+    
+    # Test 2: AI Speed (będzie 20-60s)
+    - action: screenshot
+      name: "before_ai_test"
+    
+    - action: analyze
+      question: "How many windows or dialogs are visible on screen?"
+      save_to: ai_benchmark
+    
+    - action: disconnect
+
+  # ===================================
+  # CV Dialog Detection & Auto-Fill
+  # ===================================
+  cv_smart_login:
+    - action: connect
+    - action: wait
+      seconds: 3
+    
+    # 1. Wykryj dialog (milisekundy)
+    - action: cv_find_dialog
+      save_to: dialog_pos
+      click: false
+    
+    # 2. Znajdź pole tekstowe
+    - action: cv_find_text_field
+      click: true
+      save_to: text_field_pos
+    
+    - action: wait
+      seconds: 0.5
+    
+    # 3. Wpisz hasło
+    - action: type
+      text: "automation"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 3
+    
+    - action: disconnect
+
+  # ===================================
+  # Full Auto-Login with CV (Super Fast!)
+  # ===================================
+  cv_auto_login_complete:
+    - action: connect
+    - action: wait
+      seconds: 3
+    
+    # Jedna akcja wykrywa wszystko (milisekundy!)
+    - action: cv_detect
+      save_to: screen
+    
+    # Jeśli znaleziono pole tekstowe - kliknij
+    - action: cv_find_text_field
+      click: true
+    
+    - action: wait
+      seconds: 0.3
+    
+    # Wpisz username (jeśli potrzebny)
+    - action: type
+      text: "automation"
+    
+    - action: key
+      key: tab
+    
+    - action: wait
+      seconds: 0.2
+    
+    # Wpisz hasło
+    - action: type
+      text: "automation"
+    
+    - action: wait
+      seconds: 0.3
+    
+    # Znajdź i kliknij Unlock
+    - action: cv_find_unlock
+      click: true
+    
+    - action: wait
+      seconds: 3
+    
+    # Weryfikuj sukces
+    - action: cv_detect
+      save_to: final_state
+    
+    - action: disconnect

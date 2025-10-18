@@ -1,0 +1,17 @@
+# Quick Connection Test - 5 seconds
+connection:
+  protocol: vnc
+  host: vnc-desktop
+  port: 5901
+  password: automation
+
+ollama:
+  url: http://ollama:11434
+  model: llava:7b
+
+scenarios:
+  quick_connection_test:
+    - action: connect
+    - action: wait
+      seconds: 2
+    - action: disconnect

@@ -82,16 +82,16 @@ test-basic: ## Uruchom podstawowy test scenariusza (z nagrywaniem wideo)
 	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/test_basic.yaml test_connection
 
 test-quick: ## Uruchom szybki test połączenia (bez AI, bez wideo)
-	@echo "$(BLUE)Szybki test połączenia...$(NC)"
-	@docker-compose exec automation-controller python3 -c "from automation.remote_automation import RemoteController; c = RemoteController('vnc', 'vnc-desktop', 5901, 'automation'); c.connect(); print('✓ Połączono'); import time; time.sleep(2); c.disconnect(); print('✓ Rozłączono')"
+	@echo "$(BLUE)Szybki test połączenia (5s)...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/quick_test.yaml quick_connection_test --no-recording
 
 test-firefox: ## Uruchom test Firefox (z nagrywaniem wideo)
 	@echo "$(BLUE)Test Firefox...$(NC)"
 	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/test_basic.yaml test_firefox
 
-test-firefox-simple: ## Uruchom test Firefox (prosty, bez AI)
+test-firefox-simple: ## Uruchom test Firefox (prosty, bez AI, bez recording)
 	@echo "$(BLUE)Test Firefox (simple)...$(NC)"
-	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/test_firefox_simple.yaml test_firefox_simple
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/test_firefox_simple.yaml test_firefox_simple --no-recording
 
 test-firefox-ai: ## Uruchom test Firefox (z AI Vision)
 	@echo "$(BLUE)Test Firefox (AI)...$(NC)"
@@ -186,6 +186,120 @@ list-ai-tests: ## Pokaż listę testów AI
 	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/ai_driven_tests.yaml dummy --list || true
 
 # ===================================
+# AI Hybrid Tests - Niezawodne (AI analiza + click_position)
+# ===================================
+
+test-hybrid-performance: ## Hybrid: Terminal performance analysis
+	@echo "$(BLUE)Hybrid Test: Terminal performance...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/ai_hybrid_tests.yaml terminal_performance_analysis --no-recording
+
+test-hybrid-desktop: ## Hybrid: Desktop visual analysis
+	@echo "$(BLUE)Hybrid Test: Desktop analysis...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/ai_hybrid_tests.yaml desktop_visual_analysis --no-recording
+
+test-hybrid-firefox: ## Hybrid: Firefox launch & page analysis
+	@echo "$(BLUE)Hybrid Test: Firefox analysis...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/ai_hybrid_tests.yaml firefox_simple_analysis --no-recording
+
+test-hybrid-editor: ## Hybrid: Text editor code validation
+	@echo "$(BLUE)Hybrid Test: Text editor...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/ai_hybrid_tests.yaml text_editor_validation --no-recording
+
+test-hybrid-state: ## Hybrid: System state comparison
+	@echo "$(BLUE)Hybrid Test: State monitoring...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/ai_hybrid_tests.yaml system_state_comparison --no-recording
+
+test-hybrid-errors: ## Hybrid: Error message analysis
+	@echo "$(BLUE)Hybrid Test: Error analysis...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/ai_hybrid_tests.yaml error_message_analysis --no-recording
+
+test-hybrid-commands: ## Hybrid: Command output parsing
+	@echo "$(BLUE)Hybrid Test: Command parsing...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/ai_hybrid_tests.yaml command_parsing_test --no-recording
+
+test-hybrid-accessibility: ## Hybrid: UI accessibility check
+	@echo "$(BLUE)Hybrid Test: Accessibility...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/ai_hybrid_tests.yaml ui_accessibility_test --no-recording
+
+test-hybrid-windows: ## Hybrid: Multi-window stress test
+	@echo "$(BLUE)Hybrid Test: Window stress...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/ai_hybrid_tests.yaml window_stress_test --no-recording
+
+test-hybrid-all: ## Hybrid: Uruchom wszystkie hybrid testy (10-20min)
+	@echo "$(YELLOW)⚠️  Uruchamianie wszystkich hybrid testów - może zająć 10-20 minut!$(NC)"
+	@$(MAKE) --no-print-directory test-hybrid-performance
+	@$(MAKE) --no-print-directory test-hybrid-desktop
+	@$(MAKE) --no-print-directory test-hybrid-firefox
+	@$(MAKE) --no-print-directory test-hybrid-editor
+	@$(MAKE) --no-print-directory test-hybrid-state
+	@$(MAKE) --no-print-directory test-hybrid-errors
+	@$(MAKE) --no-print-directory test-hybrid-commands
+	@$(MAKE) --no-print-directory test-hybrid-accessibility
+	@$(MAKE) --no-print-directory test-hybrid-windows
+	@echo "$(GREEN)✓ Wszystkie hybrid testy zakończone!$(NC)"
+
+list-hybrid-tests: ## Pokaż listę hybrid testów
+	@echo "$(BLUE)Dostępne hybrid testy:$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/ai_hybrid_tests.yaml dummy --list || true
+
+# ===================================
+# Auto-Login Tests - Automatyczne wykrywanie i logowanie
+# ===================================
+
+test-auto-login: ## Auto: Wykryj i wypełnij okno logowania
+	@echo "$(BLUE)Auto Login: Smart detection...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/auto_login.yaml smart_login_detection --no-recording
+
+test-auto-login-retry: ## Auto: Logowanie z retry
+	@echo "$(BLUE)Auto Login: With retry...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/auto_login.yaml advanced_login_with_retry --no-recording
+
+test-system-login: ## Auto: Logowanie do systemu (username + password)
+	@echo "$(BLUE)Auto Login: System login...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/auto_login.yaml system_user_login --no-recording
+
+test-app-login: ## Auto: Logowanie do aplikacji
+	@echo "$(BLUE)Auto Login: Application login...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/auto_login.yaml application_login_handler --no-recording
+
+test-password-manager: ## Auto: Smart password manager
+	@echo "$(BLUE)Auto Login: Smart password manager...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/auto_login.yaml smart_password_manager --no-recording
+
+test-multi-login: ## Auto: Logowanie wieloetapowe (VNC + System + App)
+	@echo "$(BLUE)Auto Login: Multi-stage login...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/auto_login.yaml multi_stage_login --no-recording
+
+list-auto-login: ## Pokaż listę testów auto-login
+	@echo "$(BLUE)Dostępne testy auto-login:$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/auto_login.yaml dummy --list || true
+
+# ===================================
+# CV Detection Tests - Super Fast! (milisekundy zamiast sekund)
+# ===================================
+
+test-cv-speed: ## CV: Szybka detekcja (milisekundy!)
+	@echo "$(BLUE)CV Test: Fast detection (milliseconds)...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/cv_speed_test.yaml cv_fast_detection --no-recording
+
+test-cv-unlock: ## CV: Fast unlock screen
+	@echo "$(BLUE)CV Test: Fast unlock...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/cv_speed_test.yaml cv_fast_unlock --no-recording
+
+test-cv-auto-login: ## CV: Complete auto-login (super fast!)
+	@echo "$(BLUE)CV Test: Auto-login complete...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/cv_speed_test.yaml cv_auto_login_complete --no-recording
+
+test-cv-vs-ai: ## CV vs AI: Speed benchmark
+	@echo "$(BLUE)Speed Benchmark: CV vs AI...$(NC)"
+	@echo "$(YELLOW)⚠️  This will take ~1min (AI is slow)$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/cv_speed_test.yaml speed_benchmark --no-recording
+
+list-cv-tests: ## Pokaż listę testów CV
+	@echo "$(BLUE)Dostępne testy CV:$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/cv_speed_test.yaml dummy --list || true
+
+# ===================================
 
 test-terminal: ## Uruchom test terminala (z nagrywaniem wideo)
 	@echo "$(BLUE)Test terminala...$(NC)"
@@ -248,6 +362,29 @@ info: ## Pokaż informacje o dostępie
 	@echo "   make test-ai-errors      - Detekcja i diagnoza błędów"
 	@echo "   make test-ai-performance - Monitoring wydajności systemu"
 	@echo "   make test-ai-all         - Wszystkie testy AI (10-30min)"
+	@echo ""
+	@echo "$(YELLOW)🔀 Testy Hybrid (AI + Niezawodne akcje):$(NC)"
+	@echo "   make list-hybrid-tests   - Lista hybrid testów"
+	@echo "   make test-hybrid-performance - Terminal performance"
+	@echo "   make test-hybrid-desktop - Analiza pulpitu"
+	@echo "   make test-hybrid-errors  - Analiza błędów"
+	@echo "   make test-hybrid-commands - Parsing komend"
+	@echo "   make test-hybrid-all     - Wszystkie hybrid (10-20min)"
+	@echo ""
+	@echo "$(YELLOW)🔐 Auto-Login (Wykrywanie i wypełnianie):$(NC)"
+	@echo "   make list-auto-login     - Lista testów logowania"
+	@echo "   make test-auto-login     - Wykryj okno logowania"
+	@echo "   make test-system-login   - Logowanie do systemu"
+	@echo "   make test-app-login      - Logowanie do aplikacji"
+	@echo "   make test-password-manager - Smart password manager"
+	@echo "   make test-multi-login    - Multi-stage login"
+	@echo ""
+	@echo "$(YELLOW)⚡ CV Detection (100x szybsze niż AI!):$(NC)"
+	@echo "   make list-cv-tests       - Lista testów CV"
+	@echo "   make test-cv-speed       - Fast detection (milisekundy!)"
+	@echo "   make test-cv-unlock      - Fast unlock screen"
+	@echo "   make test-cv-auto-login  - Complete auto-login (super fast)"
+	@echo "   make test-cv-vs-ai       - Speed benchmark: CV vs AI"
 	@echo ""
 	@echo "$(YELLOW)🎬 Nagrania testów:$(NC)"
 	@echo "   Lokalizacja: $(BLUE)results/videos/$(NC)"

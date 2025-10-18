@@ -6,11 +6,65 @@ System automatyzacji zdalnej kontroli komputera z integracją AI vision models p
 
 - **Zdalna kontrola**: VNC, RDP, SPICE
 - **AI Vision**: Analiza ekranu przez Ollama (modele do 12B)
+- **🔐 Auto-Login**: Automatyczne wykrywanie i wypełnianie okien logowania
 - **Prosty DSL**: Opis zadań w YAML/JSON
 - **Automatyzacja**: Klik, pisanie, weryfikacja, analiza
 - **📹 Nagrywanie wideo**: Każdy test nagrywany do MP4 (10 fps)
 - **Optymalizacja**: Cache'owanie warstw Dockera i modeli
 - **Persystencja danych**: Modele i cache są zachowywane między uruchomieniami
+
+## 🎯 Quick Start - Testy AI
+
+### ⚡ Zacznij Tu!
+➡️ **[START_HERE.md](START_HERE.md)** - Quick Start (3 minuty)
+
+### ✅ Działające Testy (Przetestowane 2025-10-18)
+```bash
+# Szybki test połączenia (5s)
+make test-quick
+
+# AI Desktop Analysis (2 min)
+make test-debug-screenshots      # Screenshoty + AI analiza
+make test-hybrid-desktop         # Analiza pulpitu: ikony, kolory, layout
+
+# Firefox bez AI (1 min)
+make test-firefox-simple
+```
+
+### 🔐 Auto-Login - Nowe! (Wykrywanie i Wypełnianie)
+```bash
+# AI wykrywa okno logowania i automatycznie wypełnia
+make test-auto-login              # Smart detection
+make test-password-manager        # Inteligentne zarządzanie hasłami
+make test-multi-login             # Multi-stage (VNC + System + App)
+
+# Zobacz pełną listę:
+make list-auto-login
+```
+
+**Zobacz:** [AUTO_LOGIN_GUIDE.md](AUTO_LOGIN_GUIDE.md) - Pełna dokumentacja
+
+### 📚 Dokumentacja (Przeczytaj w tej kolejności)
+1. **[START_HERE.md](START_HERE.md)** ⭐ - Zacznij tu! (3 min)
+2. **[AUTO_LOGIN_GUIDE.md](AUTO_LOGIN_GUIDE.md)** 🔐 - Auto-Login (wykrywanie i wypełnianie)
+3. **[FINAL_SUMMARY.md](FINAL_SUMMARY.md)** 🎯 - Finalne podsumowanie + AI limitations
+4. **[WORKING_TESTS_GUIDE.md](WORKING_TESTS_GUIDE.md)** - Co naprawdę działa
+5. **[TEST_RESULTS_SUMMARY.md](TEST_RESULTS_SUMMARY.md)** - Wyniki testów
+6. [HYBRID_TESTS_README.md](HYBRID_TESTS_README.md) - Hybrid approach (teoria)
+7. [AI_TESTS_QUICK_START.md](AI_TESTS_QUICK_START.md) - Quick start guide
+8. [docs/AI_TESTS.md](docs/AI_TESTS.md) - Pełna dokumentacja (teoria)
+
+### 🎓 Co Działa vs Co Nie (Rzeczywiste Testy)
+| Test | Status | Czas | AI Response |
+|------|--------|------|-------------|
+| `test-quick` | ✅ 100% | 5s | - |
+| `test-debug-screenshots` | ✅ 100% | 2min | 30s |
+| `test-hybrid-desktop` | ✅ 95% | 2min | 5x 2-8s |
+| `test-firefox-simple` | ✅ 90% | 1min | - |
+| `test-ai-adaptive` | ❌ 30% | 3min | zawodzi |
+| `test-hybrid-performance` | ⚠️ 40% | - | wymaga fix |
+
+**Zobacz [TEST_RESULTS_SUMMARY.md](TEST_RESULTS_SUMMARY.md) dla pełnych wyników.**
 
 ## 📋 Wymagania
 

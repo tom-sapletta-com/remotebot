@@ -1,0 +1,614 @@
+# AI Hybrid Tests - Kombinacja AI analizy z niezawodnymi akcjami
+# Te testy używają AI do analizy, ale click_position do działania
+
+connection:
+  protocol: vnc
+  host: vnc-desktop
+  port: 5901
+  password: automation
+
+ollama:
+  url: http://ollama:11434
+  model: llava:7b
+
+scenarios:
+  
+  # ===================================
+  # Terminal Performance Analysis
+  # ===================================
+  terminal_performance_analysis:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    # Otwórz Terminal (znana pozycja - left side icons)
+    - action: click_position
+      position: "center-left"
+    
+    - action: wait
+      seconds: 1
+    
+    # Podwójne kliknięcie jeśli potrzeba
+    - action: click_position
+      position: "center-left"
+    
+    - action: wait
+      seconds: 3
+    
+    # AI sprawdza czy terminal się otworzył
+    - action: analyze
+      question: "Is there a terminal or command prompt window visible? Answer only YES or NO."
+      save_to: terminal_opened
+    
+    # Uruchom top
+    - action: type
+      text: "top -bn1 | head -15"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 2
+    
+    - action: screenshot
+      name: "top_output"
+    
+    # AI analizuje output
+    - action: analyze
+      question: "Extract the CPU usage percentage from the top command output. Just give the number."
+      save_to: cpu_usage
+    
+    - action: analyze
+      question: "What is the process using the most CPU? Give process name and percentage."
+      save_to: top_process
+    
+    # Disk usage
+    - action: type
+      text: "df -h / | tail -1"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 1
+    
+    - action: analyze
+      question: "What is the disk usage percentage for the root filesystem? Just the number."
+      save_to: disk_usage
+    
+    # Memory info
+    - action: type
+      text: "free -h | grep Mem"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 1
+    
+    - action: analyze
+      question: "How much memory is used vs total? Give in format 'X used / Y total'."
+      save_to: memory_usage
+    
+    - action: disconnect
+
+  # ===================================
+  # Desktop Visual Analysis
+  # ===================================
+  desktop_visual_analysis:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    - action: screenshot
+      name: "desktop_analysis"
+    
+    # Szczegółowa analiza wizualna
+    - action: analyze
+      question: "Count how many icons are visible on the left side of the desktop. Just give the number."
+      save_to: left_icon_count
+    
+    - action: analyze
+      question: "What colors dominate this desktop? List the main 3 colors."
+      save_to: color_scheme
+    
+    - action: analyze
+      question: "Is there a taskbar/panel visible? If yes, is it at top or bottom?"
+      save_to: panel_location
+    
+    - action: analyze
+      question: "What is the current time shown on screen? Just the time."
+      save_to: screen_time
+    
+    - action: analyze
+      question: "Describe the desktop wallpaper or background. What do you see?"
+      save_to: wallpaper
+    
+    - action: disconnect
+
+  # ===================================
+  # Firefox Simple Launch & Analysis
+  # ===================================
+  firefox_simple_analysis:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    # AI sprawdza czy Firefox jest widoczny
+    - action: analyze
+      question: "Can you see a Firefox icon on the desktop? Answer YES or NO."
+      save_to: firefox_visible
+    
+    # Kliknij w top-left gdzie zazwyczaj są ikony
+    - action: click_position
+      position: "top-left"
+    
+    - action: wait
+      seconds: 1
+    
+    # Podwójne kliknięcie
+    - action: click_position
+      position: "top-left"
+    
+    - action: wait
+      seconds: 5
+    
+    # AI weryfikuje co się otworzyło
+    - action: analyze
+      question: "What application window is now open? Describe what you see."
+      save_to: opened_application
+    
+    # Jeśli to Firefox, kontynuuj
+    - action: key
+      key: ctrl+l
+    
+    - action: type
+      text: "example.com"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 4
+    
+    - action: screenshot
+      name: "page_loaded"
+    
+    # AI analizuje stronę
+    - action: analyze
+      question: "Is a webpage loaded? What is the main heading or title text visible?"
+      save_to: page_content
+    
+    - action: analyze
+      question: "Are there any links visible on this page? How many?"
+      save_to: link_count
+    
+    - action: disconnect
+
+  # ===================================
+  # Text Editor Code Validation
+  # ===================================
+  text_editor_validation:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    # Kliknij w obszar ikon (może być Text Editor)
+    - action: click_position
+      position: "center-left"
+    
+    - action: wait
+      seconds: 1
+    
+    - action: click_position
+      position: "center-left"
+    
+    - action: wait
+      seconds: 3
+    
+    # Sprawdź co się otworzyło
+    - action: analyze
+      question: "Is there a text editor or text input window open?"
+      save_to: editor_opened
+    
+    # Napisz prosty kod
+    - action: type
+      text: "#!/bin/bash"
+    
+    - action: key
+      key: enter
+    
+    - action: type
+      text: "echo 'Hello World'"
+    
+    - action: key
+      key: enter
+    
+    - action: type
+      text: "date"
+    
+    - action: wait
+      seconds: 1
+    
+    - action: screenshot
+      name: "code_written"
+    
+    # AI analizuje kod
+    - action: analyze
+      question: "Can you read bash code in the editor? What does this script do?"
+      save_to: code_analysis
+    
+    - action: analyze
+      question: "Is the syntax highlighting working? Can you see different colors for different parts of code?"
+      save_to: syntax_highlighting
+    
+    - action: disconnect
+
+  # ===================================
+  # System State Monitor
+  # ===================================
+  system_state_comparison:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    # Stan 1 - pulpit czysty
+    - action: screenshot
+      name: "state_clean"
+    
+    - action: analyze
+      question: "How many windows are currently open on the desktop?"
+      save_to: state1_window_count
+    
+    # Otwórz aplikację
+    - action: click_position
+      position: "center-left"
+    
+    - action: wait
+      seconds: 1
+    
+    - action: click_position
+      position: "center-left"
+    
+    - action: wait
+      seconds: 3
+    
+    # Stan 2 - po otwarciu
+    - action: screenshot
+      name: "state_changed"
+    
+    - action: analyze
+      question: "How many windows are visible now? What changed compared to before?"
+      save_to: state2_changes
+    
+    - action: analyze
+      question: "What type of application window is now visible?"
+      save_to: app_type
+    
+    # Otwórz kolejną
+    - action: key
+      key: alt+F2
+    
+    - action: wait
+      seconds: 1
+    
+    - action: type
+      text: "firefox"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 5
+    
+    # Stan 3 - wiele okien
+    - action: screenshot
+      name: "state_multiple"
+    
+    - action: analyze
+      question: "Now how many windows are visible? List them."
+      save_to: state3_windows
+    
+    - action: disconnect
+
+  # ===================================
+  # Error Analysis (bez find_and_click)
+  # ===================================
+  error_message_analysis:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    # Otwórz terminal pozycją
+    - action: click_position
+      position: "center-left"
+    
+    - action: wait
+      seconds: 1
+    
+    - action: click_position
+      position: "center-left"
+    
+    - action: wait
+      seconds: 3
+    
+    # Wywołaj błąd
+    - action: type
+      text: "python3 -c 'import nonexistent_module_xyz'"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 2
+    
+    - action: screenshot
+      name: "error_occurred"
+    
+    # AI analizuje błąd
+    - action: analyze
+      question: "Is there an error message visible in red text? Answer YES or NO."
+      save_to: error_visible
+    
+    - action: analyze
+      question: "What is the exact error message text? Copy it word for word."
+      save_to: error_text
+    
+    - action: analyze
+      question: "What type of Python error is this? (ImportError, SyntaxError, etc.)"
+      save_to: error_type
+    
+    - action: analyze
+      question: "Based on this error, what would be the solution? Be specific."
+      save_to: error_solution
+    
+    # Test że system działa
+    - action: type
+      text: "echo 'System OK'"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 1
+    
+    - action: analyze
+      question: "Did the echo command work? Is 'System OK' visible?"
+      save_to: recovery_status
+    
+    - action: disconnect
+
+  # ===================================
+  # Command Output Parser
+  # ===================================
+  command_parsing_test:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    # Terminal
+    - action: click_position
+      position: "center-left"
+    
+    - action: wait
+      seconds: 1
+    
+    - action: click_position
+      position: "center-left"
+    
+    - action: wait
+      seconds: 3
+    
+    # System info
+    - action: type
+      text: "uname -a"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 1
+    
+    - action: analyze
+      question: "What Linux distribution or system is this? Extract from uname output."
+      save_to: system_type
+    
+    - action: analyze
+      question: "What is the kernel version shown? Just the version number."
+      save_to: kernel_version
+    
+    # Network info
+    - action: type
+      text: "hostname"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 1
+    
+    - action: analyze
+      question: "What is the hostname of this system?"
+      save_to: hostname
+    
+    # Current user
+    - action: type
+      text: "whoami"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 1
+    
+    - action: analyze
+      question: "What username is shown?"
+      save_to: current_user
+    
+    # Working directory
+    - action: type
+      text: "pwd"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 1
+    
+    - action: analyze
+      question: "What is the current working directory path?"
+      save_to: working_directory
+    
+    - action: disconnect
+
+  # ===================================
+  # UI Accessibility Check
+  # ===================================
+  ui_accessibility_test:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    # Otwórz Firefox
+    - action: click_position
+      position: "top-left"
+    
+    - action: wait
+      seconds: 1
+    
+    - action: click_position
+      position: "top-left"
+    
+    - action: wait
+      seconds: 5
+    
+    - action: key
+      key: ctrl+l
+    
+    - action: type
+      text: "example.com"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 4
+    
+    - action: screenshot
+      name: "page_normal"
+    
+    # AI sprawdza accessibility
+    - action: analyze
+      question: "Rate the text contrast on this page from 1-10. Is the text easy to read against the background?"
+      save_to: contrast_rating
+    
+    - action: analyze
+      question: "What is the font size - small, medium, or large? Is it readable for people with visual impairments?"
+      save_to: font_size_assessment
+    
+    - action: analyze
+      question: "Are headings clearly distinguishable from body text? Answer YES or NO."
+      save_to: heading_clarity
+    
+    # Test zoom
+    - action: key
+      key: ctrl+plus
+    
+    - action: key
+      key: ctrl+plus
+    
+    - action: wait
+      seconds: 2
+    
+    - action: screenshot
+      name: "page_zoomed"
+    
+    - action: analyze
+      question: "After zooming 200%, is the page still functional? Does text wrap properly?"
+      save_to: zoom_usability
+    
+    - action: disconnect
+
+  # ===================================
+  # Multi-Window Stress Test
+  # ===================================
+  window_stress_test:
+    - action: connect
+    - action: wait
+      seconds: 2
+    
+    - action: analyze
+      question: "How many application windows are currently open?"
+      save_to: initial_count
+    
+    # Otwórz 3 aplikacje
+    - action: click_position
+      position: "center-left"
+    
+    - action: wait
+      seconds: 1
+    
+    - action: click_position
+      position: "center-left"
+    
+    - action: wait
+      seconds: 2
+    
+    - action: key
+      key: alt+F2
+    
+    - action: wait
+      seconds: 1
+    
+    - action: type
+      text: "firefox"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 4
+    
+    - action: key
+      key: alt+F2
+    
+    - action: wait
+      seconds: 1
+    
+    - action: type
+      text: "mousepad"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 3
+    
+    - action: screenshot
+      name: "multiple_windows"
+    
+    # AI analizuje
+    - action: analyze
+      question: "How many windows are now visible? List all of them."
+      save_to: final_count
+    
+    - action: analyze
+      question: "Which window is currently in focus (active/on top)?"
+      save_to: active_window
+    
+    - action: analyze
+      question: "Is the desktop still responsive? Any signs of lag or freezing?"
+      save_to: performance_status
+    
+    # Przełącz okna
+    - action: key
+      key: alt+tab
+    
+    - action: wait
+      seconds: 1
+    
+    - action: analyze
+      question: "After Alt+Tab, which window is now active?"
+      save_to: switched_window
+    
+    - action: disconnect

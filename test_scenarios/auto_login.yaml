@@ -1,0 +1,347 @@
+# Auto Login Detection - Automatyczne wykrywanie i wypełnianie logowania
+# Ten scenariusz wykrywa okna logowania i automatycznie je wypełnia
+
+connection:
+  protocol: vnc
+  host: vnc-desktop
+  port: 5901
+  password: automation
+
+ollama:
+  url: http://ollama:11434
+  model: llava:7b
+
+scenarios:
+  
+  # ===================================
+  # Smart Login - Wykrywanie okna logowania
+  # ===================================
+  smart_login_detection:
+    - action: connect
+    - action: wait
+      seconds: 3
+    
+    # AI sprawdza czy jest okno logowania
+    - action: screenshot
+      name: "check_login_screen"
+    
+    - action: analyze
+      question: "Is there a login window, password prompt, or authentication dialog visible on screen? Answer only YES or NO."
+      save_to: login_window_detected
+    
+    # Jeśli jest okno logowania - AI znajdzie pole hasła
+    - action: analyze
+      question: "Can you see a password field, password input box, or login form? Describe its approximate location (top, center, bottom)."
+      save_to: password_field_location
+    
+    # Kliknij w centrum (gdzie zazwyczaj jest pole hasła)
+    - action: click_position
+      position: "center"
+    
+    - action: wait
+      seconds: 1
+    
+    # Wpisz hasło
+    - action: type
+      text: "automation"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 2
+    
+    # Sprawdź czy logowanie się powiodło
+    - action: analyze
+      question: "Did the login window close? Is the desktop now visible? Answer YES or NO."
+      save_to: login_successful
+    
+    - action: disconnect
+
+  # ===================================
+  # Advanced Login - Wielokrotne próby
+  # ===================================
+  advanced_login_with_retry:
+    - action: connect
+    - action: wait
+      seconds: 3
+    
+    # Próba 1: Sprawdź czy jest okno logowania
+    - action: screenshot
+      name: "login_check_1"
+    
+    - action: analyze
+      question: "Is there a login dialog, password prompt, or authentication window visible? Answer YES or NO."
+      save_to: attempt_1_login_detected
+    
+    - action: analyze
+      question: "What type of login is this? (VNC password, system login, application login, or none)"
+      save_to: login_type
+    
+    # Jeśli VNC password prompt
+    - action: click_position
+      position: "center"
+    
+    - action: wait
+      seconds: 0.5
+    
+    - action: type
+      text: "automation"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 3
+    
+    # Sprawdź czy się powiodło
+    - action: screenshot
+      name: "after_login_attempt"
+    
+    - action: analyze
+      question: "Is the desktop now visible without any login prompts? Answer YES or NO."
+      save_to: desktop_accessible
+    
+    # Jeśli nadal jest okno logowania - druga próba
+    - action: analyze
+      question: "Is there still a login or password prompt visible? Answer YES or NO."
+      save_to: second_login_needed
+    
+    - action: disconnect
+
+  # ===================================
+  # System Login - Logowanie do systemu (nie VNC)
+  # ===================================
+  system_user_login:
+    - action: connect
+    - action: wait
+      seconds: 3
+    
+    # Sprawdź czy jest ekran logowania systemu
+    - action: screenshot
+      name: "system_login_check"
+    
+    - action: analyze
+      question: "Is there a system login screen with username and password fields? Answer YES or NO."
+      save_to: system_login_screen
+    
+    - action: analyze
+      question: "Can you see a username field or username prompt? Answer YES or NO."
+      save_to: username_field_visible
+    
+    # Jeśli jest pole username
+    - action: click_position
+      position: "center"
+    
+    - action: wait
+      seconds: 0.5
+    
+    - action: type
+      text: "automation"
+    
+    - action: key
+      key: tab
+    
+    - action: wait
+      seconds: 0.5
+    
+    # Wpisz hasło
+    - action: type
+      text: "automation"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 5
+    
+    # Sprawdź czy zalogowano
+    - action: screenshot
+      name: "after_system_login"
+    
+    - action: analyze
+      question: "Is the desktop environment now loaded? Are there desktop icons or taskbar visible? Answer YES or NO."
+      save_to: logged_in_successfully
+    
+    - action: disconnect
+
+  # ===================================
+  # Application Login - Logowanie do aplikacji
+  # ===================================
+  application_login_handler:
+    - action: connect
+    - action: wait
+      seconds: 3
+    
+    # Otwórz aplikację która może wymagać logowania
+    - action: click_position
+      position: "top-left"
+    
+    - action: wait
+      seconds: 5
+    
+    # Sprawdź czy pojawiło się okno logowania aplikacji
+    - action: screenshot
+      name: "app_window_check"
+    
+    - action: analyze
+      question: "Is there a popup window, dialog box, or modal asking for credentials or password? Answer YES or NO."
+      save_to: app_login_popup
+    
+    - action: analyze
+      question: "What information is the dialog requesting? (username, password, both, API key, or other)"
+      save_to: required_credentials
+    
+    # AI szuka pola logowania
+    - action: analyze
+      question: "Where is the first input field located on screen? (top-left, top-center, center, bottom, etc.)"
+      save_to: first_field_location
+    
+    # Wypełnij formularz
+    - action: click_position
+      position: "center"
+    
+    - action: type
+      text: "admin"
+    
+    - action: key
+      key: tab
+    
+    - action: type
+      text: "password123"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 3
+    
+    # Weryfikacja
+    - action: analyze
+      question: "Did the login dialog close? Is the application now showing its main interface? Answer YES or NO."
+      save_to: app_login_success
+    
+    - action: disconnect
+
+  # ===================================
+  # Smart Password Manager - Inteligentne zarządzanie hasłami
+  # ===================================
+  smart_password_manager:
+    - action: connect
+    - action: wait
+      seconds: 3
+    
+    # Ciągłe monitorowanie czy pojawia się okno logowania
+    - action: screenshot
+      name: "monitor_1"
+    
+    - action: analyze
+      question: "Scan the entire screen. Is there ANY login prompt, password field, authentication dialog, or credential request visible? Answer YES or NO."
+      save_to: credentials_needed
+    
+    - action: analyze
+      question: "If a login prompt is visible, what is the title or header text of the dialog/window?"
+      save_to: dialog_title
+    
+    - action: analyze
+      question: "How many input fields are visible in the login form? (0, 1, 2, or more)"
+      save_to: input_field_count
+    
+    # Logika warunkowa w zależności od typu logowania
+    - action: analyze
+      question: "Based on the screen, what credentials should be entered? Suggest username and password or just password."
+      save_to: suggested_credentials
+    
+    # Uniwersalne wypełnienie
+    - action: click_position
+      position: "center"
+    
+    - action: wait
+      seconds: 0.5
+    
+    - action: type
+      text: "automation"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 3
+    
+    # Final verification
+    - action: screenshot
+      name: "final_state"
+    
+    - action: analyze
+      question: "Describe the current state: Is user logged in? Is desktop accessible? Are there any error messages?"
+      save_to: final_status
+    
+    - action: disconnect
+
+  # ===================================
+  # Multi-Stage Login - Logowanie wieloetapowe
+  # ===================================
+  multi_stage_login:
+    - action: connect
+    - action: wait
+      seconds: 3
+    
+    # Stage 1: VNC Password
+    - action: screenshot
+      name: "stage_1"
+    
+    - action: analyze
+      question: "Is this a VNC password prompt (simple password dialog)? Answer YES or NO."
+      save_to: stage_1_vnc
+    
+    - action: click_position
+      position: "center"
+    
+    - action: type
+      text: "automation"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 3
+    
+    # Stage 2: System Login
+    - action: screenshot
+      name: "stage_2"
+    
+    - action: analyze
+      question: "Is there now a system login screen with username field? Answer YES or NO."
+      save_to: stage_2_system
+    
+    - action: click_position
+      position: "center"
+    
+    - action: type
+      text: "automation"
+    
+    - action: key
+      key: tab
+    
+    - action: type
+      text: "automation"
+    
+    - action: key
+      key: enter
+    
+    - action: wait
+      seconds: 5
+    
+    # Stage 3: Application Login (jeśli potrzebne)
+    - action: screenshot
+      name: "stage_3"
+    
+    - action: analyze
+      question: "Are there any additional login prompts or authentication dialogs? Answer YES or NO."
+      save_to: stage_3_additional
+    
+    - action: analyze
+      question: "Describe the current screen state. Is the desktop fully accessible?"
+      save_to: final_accessibility
+    
+    - action: disconnect
