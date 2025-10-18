@@ -246,9 +246,13 @@ list-hybrid-tests: ## Pokaż listę hybrid testów
 # Auto-Login Tests - Automatyczne wykrywanie i logowanie
 # ===================================
 
-test-auto-login: ## Auto: Wykryj i wypełnij okno logowania
-	@echo "$(BLUE)Auto Login: Smart detection...$(NC)"
+test-auto-login: ## Auto: Wykryj i wypełnij okno logowania (AI - wolne)
+	@echo "$(BLUE)Auto Login: Smart detection (AI - slow)...$(NC)"
 	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/auto_login.yaml smart_login_detection --no-recording
+
+test-auto-login-cv: ## Auto: CV Fast login (milisekundy!) ⚡
+	@echo "$(BLUE)Auto Login: CV Fast (milliseconds)...$(NC)"
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/auto_login.yaml cv_fast_login --no-recording
 
 test-auto-login-retry: ## Auto: Logowanie z retry
 	@echo "$(BLUE)Auto Login: With retry...$(NC)"
@@ -373,7 +377,8 @@ info: ## Pokaż informacje o dostępie
 	@echo ""
 	@echo "$(YELLOW)🔐 Auto-Login (Wykrywanie i wypełnianie):$(NC)"
 	@echo "   make list-auto-login     - Lista testów logowania"
-	@echo "   make test-auto-login     - Wykryj okno logowania"
+	@echo "   make test-auto-login-cv  - CV Fast login (milisekundy!) ⚡"
+	@echo "   make test-auto-login     - AI detection (wolne ~60s)"
 	@echo "   make test-system-login   - Logowanie do systemu"
 	@echo "   make test-app-login      - Logowanie do aplikacji"
 	@echo "   make test-password-manager - Smart password manager"

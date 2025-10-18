@@ -14,7 +14,46 @@ ollama:
 scenarios:
   
   # ===================================
-  # Smart Login - Wykrywanie okna logowania
+  # CV Fast Login - Super szybkie wykrywanie (milisekundy!)
+  # ===================================
+  cv_fast_login:
+    - action: connect
+    - action: wait
+      seconds: 3
+    
+    # CV wykrywa wszystko w milisekundach!
+    - action: cv_detect
+      save_to: cv_screen
+    
+    # Znajdź pole tekstowe
+    - action: cv_find_text_field
+      click: true
+    
+    - action: wait
+      seconds: 0.5
+    
+    # Wpisz hasło
+    - action: type
+      text: "automation"
+    
+    - action: wait
+      seconds: 0.5
+    
+    # Znajdź i kliknij Unlock
+    - action: cv_find_unlock
+      click: true
+    
+    - action: wait
+      seconds: 3
+    
+    # Weryfikuj sukces z CV (szybko!)
+    - action: cv_detect
+      save_to: cv_final
+    
+    - action: disconnect
+  
+  # ===================================
+  # Smart Login - Wykrywanie okna logowania (AI - wolne)
   # ===================================
   smart_login_detection:
     - action: connect

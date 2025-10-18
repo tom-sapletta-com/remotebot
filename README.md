@@ -6,6 +6,7 @@ System automatyzacji zdalnej kontroli komputera z integracją AI vision models p
 
 - **Zdalna kontrola**: VNC, RDP, SPICE
 - **AI Vision**: Analiza ekranu przez Ollama (modele do 12B)
+- **⚡ CV Detection**: Computer Vision - 100x szybsze niż AI! (milisekundy)
 - **🔐 Auto-Login**: Automatyczne wykrywanie i wypełnianie okien logowania
 - **Prosty DSL**: Opis zadań w YAML/JSON
 - **Automatyzacja**: Klik, pisanie, weryfikacja, analiza
@@ -44,25 +45,43 @@ make list-auto-login
 
 **Zobacz:** [AUTO_LOGIN_GUIDE.md](AUTO_LOGIN_GUIDE.md) - Pełna dokumentacja
 
+### ⚡ CV Detection - Super Fast! (100x szybsze niż AI!)
+```bash
+# Computer Vision - milisekundy zamiast sekund!
+make test-cv-speed                # Fast detection (milisekundy)
+make test-cv-unlock               # Fast unlock screen
+make test-cv-auto-login           # Complete auto-login (super fast!)
+make test-cv-vs-ai                # Speed benchmark
+
+# Zobacz pełną listę:
+make list-cv-tests
+```
+
+**Zobacz:** [CV_DETECTION_GUIDE.md](CV_DETECTION_GUIDE.md) - Pełna dokumentacja
+
 ### 📚 Dokumentacja (Przeczytaj w tej kolejności)
 1. **[START_HERE.md](START_HERE.md)** ⭐ - Zacznij tu! (3 min)
-2. **[AUTO_LOGIN_GUIDE.md](AUTO_LOGIN_GUIDE.md)** 🔐 - Auto-Login (wykrywanie i wypełnianie)
-3. **[FINAL_SUMMARY.md](FINAL_SUMMARY.md)** 🎯 - Finalne podsumowanie + AI limitations
-4. **[WORKING_TESTS_GUIDE.md](WORKING_TESTS_GUIDE.md)** - Co naprawdę działa
-5. **[TEST_RESULTS_SUMMARY.md](TEST_RESULTS_SUMMARY.md)** - Wyniki testów
-6. [HYBRID_TESTS_README.md](HYBRID_TESTS_README.md) - Hybrid approach (teoria)
-7. [AI_TESTS_QUICK_START.md](AI_TESTS_QUICK_START.md) - Quick start guide
-8. [docs/AI_TESTS.md](docs/AI_TESTS.md) - Pełna dokumentacja (teoria)
+2. **[AI_VS_CV_COMPARISON.md](AI_VS_CV_COMPARISON.md)** 📊 - Rzeczywiste porównanie (60s vs <1s!)
+3. **[CV_DETECTION_GUIDE.md](CV_DETECTION_GUIDE.md)** ⚡ - CV Detection (100x szybsze!)
+4. **[AUTO_LOGIN_GUIDE.md](AUTO_LOGIN_GUIDE.md)** 🔐 - Auto-Login (wykrywanie i wypełnianie)
+5. **[FINAL_SUMMARY.md](FINAL_SUMMARY.md)** 🎯 - Finalne podsumowanie + AI limitations
+6. **[WORKING_TESTS_GUIDE.md](WORKING_TESTS_GUIDE.md)** - Co naprawdę działa
+7. **[TEST_RESULTS_SUMMARY.md](TEST_RESULTS_SUMMARY.md)** - Wyniki testów
+8. [HYBRID_TESTS_README.md](HYBRID_TESTS_README.md) - Hybrid approach (teoria)
+9. [AI_TESTS_QUICK_START.md](AI_TESTS_QUICK_START.md) - Quick start guide
+10. [docs/AI_TESTS.md](docs/AI_TESTS.md) - Pełna dokumentacja (teoria)
 
 ### 🎓 Co Działa vs Co Nie (Rzeczywiste Testy)
-| Test | Status | Czas | AI Response |
-|------|--------|------|-------------|
-| `test-quick` | ✅ 100% | 5s | - |
-| `test-debug-screenshots` | ✅ 100% | 2min | 30s |
-| `test-hybrid-desktop` | ✅ 95% | 2min | 5x 2-8s |
-| `test-firefox-simple` | ✅ 90% | 1min | - |
-| `test-ai-adaptive` | ❌ 30% | 3min | zawodzi |
-| `test-hybrid-performance` | ⚠️ 40% | - | wymaga fix |
+| Test | Status | Czas | Metoda |
+|------|--------|------|--------|
+| `test-quick` | ✅ 100% | 5s | Simple |
+| `test-cv-speed` | ✅ 100% | <1s | CV ⚡ |
+| `test-cv-unlock` | ✅ 95% | <3s | CV ⚡ |
+| `test-debug-screenshots` | ✅ 100% | 2min | AI (30s) |
+| `test-hybrid-desktop` | ✅ 95% | 2min | AI (varied) |
+| `test-firefox-simple` | ✅ 90% | 1min | Simple |
+| `test-ai-adaptive` | ❌ 30% | 3min | AI (zawodzi) |
+| `test-hybrid-performance` | ⚠️ 40% | - | Hybrid (fix needed) |
 
 **Zobacz [TEST_RESULTS_SUMMARY.md](TEST_RESULTS_SUMMARY.md) dla pełnych wyników.**
 
