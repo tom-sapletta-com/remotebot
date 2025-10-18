@@ -56,8 +56,8 @@ services:
   # Automation Controller - host dla skryptów automatyzacji
   automation-controller:
     build:
-      context: controller
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: controller/Dockerfile
     container_name: automation-controller
     depends_on:
       - vnc-desktop
