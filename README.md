@@ -8,6 +8,7 @@ System automatyzacji zdalnej kontroli komputera z integracją AI vision models p
 - **AI Vision**: Analiza ekranu przez Ollama (modele do 12B)
 - **Prosty DSL**: Opis zadań w YAML/JSON
 - **Automatyzacja**: Klik, pisanie, weryfikacja, analiza
+- **📹 Nagrywanie wideo**: Każdy test nagrywany do MP4 (10 fps)
 - **Optymalizacja**: Cache'owanie warstw Dockera i modeli
 - **Persystencja danych**: Modele i cache są zachowywane między uruchomieniami
 
@@ -513,14 +514,22 @@ make vnc
 # Pełny test suite
 make test
 
-# Lub pojedyncze testy
+# Lub pojedyncze testy (z nagrywaniem wideo 📹)
 make test-basic      # Podstawowy test połączenia
 make test-firefox    # Test przeglądarki
 make test-terminal   # Test terminala
 
+# Test bez nagrywania (szybszy)
+make test-no-recording
+
+# Lista dostępnych scenariuszy
+make list-scenarios
+
 # Tryb interaktywny
 make interactive
 ```
+
+**📹 Nagrania wideo testów**: Wszystkie testy są automatycznie nagrywane do `results/videos/*.mp4`. Zobacz [VIDEO_RECORDING.md](VIDEO_RECORDING.md) dla szczegółów.
 
 ---
 
@@ -919,6 +928,14 @@ make test          # Testy funkcjonalne
 # Generowanie raportów
 # Przetwarzanie dokumentów
 ```
+
+---
+
+## 📚 Dokumentacja
+
+- **[VIDEO_RECORDING.md](VIDEO_RECORDING.md)** - Szczegóły nagrywania testów do MP4
+- **[CACHING.md](CACHING.md)** - Optymalizacja Docker i cache
+- **[test_scenarios/](test_scenarios/)** - Przykładowe scenariusze testowe
 
 ---
 

@@ -8,8 +8,8 @@ import yaml
 import argparse
 from pathlib import Path
 
-# Dodaj katalog automation do ścieżki
-sys.path.insert(0, str(Path(__file__).parent / "automation"))
+# Dodaj katalog automation do ścieżki (już jesteśmy w automation/)
+sys.path.insert(0, str(Path(__file__).parent))
 
 from remote_automation import RemoteController, OllamaVision, AutomationEngine
 

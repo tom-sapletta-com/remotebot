@@ -78,23 +78,23 @@ test-wait: ## Uruchom testy (z czekaniem na usługi)
 
 test-basic: ## Uruchom podstawowy test scenariusza (z nagrywaniem wideo)
 	@echo "$(BLUE)Test podstawowy...$(NC)"
-	@docker-compose exec automation-controller python3 run_scenario.py test_scenarios/test_basic.yaml test_connection
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/test_basic.yaml test_connection
 
 test-firefox: ## Uruchom test Firefox (z nagrywaniem wideo)
 	@echo "$(BLUE)Test Firefox...$(NC)"
-	@docker-compose exec automation-controller python3 run_scenario.py test_scenarios/test_basic.yaml test_firefox
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/test_basic.yaml test_firefox
 
 test-terminal: ## Uruchom test terminala (z nagrywaniem wideo)
 	@echo "$(BLUE)Test terminala...$(NC)"
-	@docker-compose exec automation-controller python3 run_scenario.py test_scenarios/test_basic.yaml test_terminal
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/test_basic.yaml test_terminal
 
 test-no-recording: ## Uruchom test bez nagrywania (szybszy)
 	@echo "$(BLUE)Test bez nagrywania...$(NC)"
-	@docker-compose exec automation-controller python3 run_scenario.py test_scenarios/test_basic.yaml test_connection --no-recording
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/test_basic.yaml test_connection --no-recording
 
 list-scenarios: ## Pokaż listę dostępnych scenariuszy
 	@echo "$(BLUE)Dostępne scenariusze:$(NC)"
-	@docker-compose exec automation-controller python3 run_scenario.py test_scenarios/test_basic.yaml dummy --list || true
+	@docker-compose exec automation-controller python3 /app/run_scenario.py /app/test_scenarios/test_basic.yaml dummy --list || true
 
 interactive: ## Tryb interaktywny CLI
 	@docker-compose exec automation-controller python3 automation_cli.py test_scenarios/test_basic.yaml --interactive
