@@ -295,6 +295,25 @@ def clear_logs():
     add_log('info', 'Logs cleared')
     return jsonify({'success': True})
 
+@app.route('/api/logs/download')
+def download_logs():
+    """Download logs as text file"""
+    global log_buffer
+    with log_lock:
+        logs_text = '\n'.join([
+            f"[{log['timestamp']}] [{log['level'].upper()}] {log['message']}"
+            for log in log_buffer
+        ])
+    
+    timestamp = time.strftime('%Y%m%d_%H%M%S')
+    filename = f'live_monitor_logs_{timestamp}.txt'
+    
+    return Response(
+        logs_text,
+        mimetype='text/plain',
+        headers={'Content-Disposition': f'attachment; filename={filename}'}
+    )
+
 @app.route('/api/execute_step/<int:step_index>')
 def execute_step(step_index):
     """Execute specific step"""
@@ -345,7 +364,7 @@ def execute_step(step_index):
         
         try:
             # Execute the step
-            automation_engine.execute_steps([step])
+            automation_engine.execute_dsl([step], f'step_{step_index + 1}')
             add_log('success', f'Step {step_index + 1} completed: {action}')
             
             # Capture screenshot after execution
@@ -421,7 +440,7 @@ def execute_all():
                 action = step.get('action', 'unknown')
                 add_log('info', f'Step {i + 1}/{len(scenario_steps)}: {action}')
                 
-                automation_engine.execute_steps([step])
+                automation_engine.execute_dsl([step], f'step_{i + 1}')
                 add_log('success', f'Step {i + 1} completed')
                 
                 # Capture screenshot after each step
@@ -811,7 +830,11 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
         <div class="log-panel">
             <div class="log-header">
                 <h2>📋 Execution Logs</h2>
-                <button onclick="clearLogs()">Clear</button>
+                <div style="display: flex; gap: 5px;">
+                    <button onclick="copyLogs()" title="Copy logs to clipboard">📋 Copy</button>
+                    <button onclick="downloadLogs()" title="Download logs as file">💾 Save</button>
+                    <button onclick="clearLogs()" title="Clear all logs">🗑️ Clear</button>
+                </div>
             </div>
             <div class="log-content" id="logContent">
                 <div class="log-entry info">
@@ -1075,6 +1098,44 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
             fetch('/api/logs/clear')
                 .then(() => updateLogs())
                 .catch(err => console.error('Clear logs error:', err));
+        }
+        
+        function copyLogs() {
+            fetch('/api/logs')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success && data.logs) {
+                        // Format logs as text
+                        const logsText = data.logs.map(log => 
+                            `[${log.timestamp}] [${log.level.toUpperCase()}] ${log.message}`
+                        ).join('\n');
+                        
+                        // Copy to clipboard
+                        navigator.clipboard.writeText(logsText)
+                            .then(() => {
+                                // Show feedback
+                                const btn = event.target;
+                                const originalText = btn.textContent;
+                                btn.textContent = '✓ Copied!';
+                                btn.style.background = '#4caf50';
+                                
+                                setTimeout(() => {
+                                    btn.textContent = originalText;
+                                    btn.style.background = '';
+                                }, 2000);
+                            })
+                            .catch(err => {
+                                console.error('Copy failed:', err);
+                                alert('Failed to copy logs to clipboard');
+                            });
+                    }
+                })
+                .catch(err => console.error('Copy logs error:', err));
+        }
+        
+        function downloadLogs() {
+            // Open download endpoint in new window (will trigger download)
+            window.open('/api/logs/download', '_blank');
         }
         
         function escapeHtml(text) {
