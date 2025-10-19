@@ -15,12 +15,13 @@ import cv2
 import numpy as np
 from threading import Thread, Lock
 import sys
+import traceback
 
 # Add automation to path
 sys.path.insert(0, str(Path(__file__).parent))
 
 try:
-    from remote_automation import RemoteController
+    from remote_automation import RemoteController, OllamaVision, AutomationEngine
     REMOTE_AVAILABLE = True
 except ImportError:
     REMOTE_AVAILABLE = False
@@ -32,14 +33,18 @@ app = Flask(__name__)
 current_scenario = None
 current_step = 0
 scenario_steps = []
+scenario_config = {}  # Connection + ollama config
 live_controller = None
 live_screenshot = None
 screenshot_lock = Lock()
 monitoring_active = False
+automation_engine = None
+execution_lock = Lock()
+is_executing = False
 
 def load_scenario(yaml_path: str, scenario_name: str):
     """Load scenario from YAML file"""
-    global current_scenario, scenario_steps
+    global current_scenario, scenario_steps, scenario_config
     
     with open(yaml_path, 'r') as f:
         data = yaml.safe_load(f)
@@ -47,6 +52,10 @@ def load_scenario(yaml_path: str, scenario_name: str):
     if scenario_name in data.get('scenarios', {}):
         current_scenario = scenario_name
         scenario_steps = data['scenarios'][scenario_name]
+        scenario_config = {
+            'connection': data.get('connection', {}),
+            'ollama': data.get('ollama', {})
+        }
         return True
     return False
 
@@ -54,23 +63,37 @@ def capture_vnc_screenshot():
     """Capture screenshot from VNC"""
     global live_controller, live_screenshot, screenshot_lock
     
-    if not REMOTE_AVAILABLE or not live_controller:
+    if not REMOTE_AVAILABLE:
+        print("[Monitor] Cannot capture screenshot: REMOTE_AVAILABLE=False")
+        return None
+        
+    if not live_controller:
+        print("[Monitor] Cannot capture screenshot: live_controller is None")
         return None
     
     try:
+        print("[Monitor] Capturing screenshot...")
         screen = live_controller.capture_screen()
+        
+        if screen is None:
+            print("[Monitor] Screenshot capture returned None")
+            return None
         
         # Convert PIL to bytes for streaming
         img_io = io.BytesIO()
         screen.save(img_io, 'JPEG', quality=85)
         img_io.seek(0)
         
+        screenshot_data = img_io.getvalue()
+        print(f"[Monitor] Screenshot captured successfully ({len(screenshot_data)} bytes)")
+        
         with screenshot_lock:
-            live_screenshot = img_io.getvalue()
+            live_screenshot = screenshot_data
         
         return live_screenshot
     except Exception as e:
-        print(f"Screenshot error: {e}")
+        print(f"[Monitor] Screenshot error: {e}")
+        traceback.print_exc()
         return None
 
 def screenshot_worker():
@@ -219,6 +242,154 @@ def get_status():
         'monitoring': monitoring_active,
         'scenario': current_scenario,
         'current_step': current_step,
+        'total_steps': len(scenario_steps),
+        'is_executing': is_executing
+    })
+
+@app.route('/api/execute_step/<int:step_index>')
+def execute_step(step_index):
+    """Execute specific step"""
+    global current_step, is_executing, automation_engine, live_controller
+    
+    if not REMOTE_AVAILABLE:
+        return jsonify({'success': False, 'error': 'Automation not available'}), 500
+    
+    if not live_controller or not live_controller.connection:
+        return jsonify({'success': False, 'error': 'Not connected to VNC'}), 400
+    
+    if step_index < 0 or step_index >= len(scenario_steps):
+        return jsonify({'success': False, 'error': 'Invalid step index'}), 400
+    
+    with execution_lock:
+        if is_executing:
+            return jsonify({'success': False, 'error': 'Already executing'}), 409
+        
+        is_executing = True
+        current_step = step_index
+    
+    try:
+        # Initialize engine if not exists
+        if not automation_engine:
+            try:
+                print(f"[Monitor] Initializing automation engine...")
+                ollama_config = scenario_config.get('ollama', {})
+                print(f"[Monitor] Ollama config: {ollama_config}")
+                vision = OllamaVision(
+                    base_url=ollama_config.get('url', 'http://ollama:11434'),
+                    model=ollama_config.get('model', 'llava:7b')
+                )
+                automation_engine = AutomationEngine(live_controller, vision, enable_recording=False)
+                print(f"[Monitor] Automation engine initialized successfully")
+            except Exception as e:
+                print(f"[Monitor] Failed to initialize automation engine: {e}")
+                traceback.print_exc()
+                return jsonify({
+                    'success': False,
+                    'error': f'Failed to initialize automation engine: {str(e)}',
+                    'traceback': traceback.format_exc()
+                }), 500
+        
+        # Execute single step
+        step = scenario_steps[step_index]
+        
+        print(f"[Monitor] Executing step {step_index + 1}: {step.get('action', 'unknown')}")
+        print(f"[Monitor] Step details: {step}")
+        
+        try:
+            # Execute the step
+            automation_engine.execute_steps([step])
+            print(f"[Monitor] Step {step_index + 1} executed successfully")
+            
+            # Capture screenshot after execution
+            time.sleep(0.5)
+            capture_vnc_screenshot()
+            
+            return jsonify({
+                'success': True,
+                'step_index': step_index,
+                'step': step
+            })
+        except Exception as e:
+            print(f"[Monitor] Error executing step: {e}")
+            traceback.print_exc()
+            return jsonify({
+                'success': False,
+                'error': f'Step execution failed: {str(e)}',
+                'traceback': traceback.format_exc()
+            }), 500
+    
+    except Exception as e:
+        print(f"[Monitor] Unexpected error in execute_step: {e}")
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': f'Unexpected error: {str(e)}',
+            'traceback': traceback.format_exc()
+        }), 500
+    
+    finally:
+        is_executing = False
+
+@app.route('/api/execute_all')
+def execute_all():
+    """Execute all steps in scenario"""
+    global current_step, is_executing, automation_engine, live_controller
+    
+    if not REMOTE_AVAILABLE:
+        return jsonify({'success': False, 'error': 'Automation not available'}), 500
+    
+    if not live_controller or not live_controller.connection:
+        return jsonify({'success': False, 'error': 'Not connected to VNC'}), 400
+    
+    if not scenario_steps:
+        return jsonify({'success': False, 'error': 'No scenario loaded'}), 400
+    
+    with execution_lock:
+        if is_executing:
+            return jsonify({'success': False, 'error': 'Already executing'}), 409
+        
+        is_executing = True
+    
+    def run_scenario():
+        global current_step, is_executing, automation_engine
+        
+        try:
+            # Initialize engine if not exists
+            if not automation_engine:
+                ollama_config = scenario_config.get('ollama', {})
+                vision = OllamaVision(
+                    base_url=ollama_config.get('url', 'http://ollama:11434'),
+                    model=ollama_config.get('model', 'llava:7b')
+                )
+                automation_engine = AutomationEngine(live_controller, vision, enable_recording=False)
+            
+            # Execute all steps
+            for i, step in enumerate(scenario_steps):
+                current_step = i
+                print(f"[Monitor] Executing step {i + 1}/{len(scenario_steps)}: {step.get('action', 'unknown')}")
+                
+                automation_engine.execute_steps([step])
+                
+                # Capture screenshot after each step
+                time.sleep(0.5)
+                capture_vnc_screenshot()
+            
+            print(f"[Monitor] Scenario completed!")
+            
+        except Exception as e:
+            print(f"[Monitor] Error executing scenario: {e}")
+        
+        finally:
+            is_executing = False
+            current_step = 0
+    
+    # Run in background thread
+    thread = Thread(target=run_scenario, daemon=True)
+    thread.start()
+    
+    return jsonify({
+        'success': True,
+        'message': 'Scenario execution started',
         'total_steps': len(scenario_steps)
     })
 
@@ -351,6 +522,33 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
             color: #cccccc;
         }
         
+        .execute-btn {
+            margin-top: 8px;
+            padding: 6px 12px;
+            background: #2e7d32;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            width: 100%;
+        }
+        
+        .execute-btn:hover {
+            background: #388e3c;
+        }
+        
+        .step.executing {
+            border-left-color: #ff9800;
+            background: #4a3c1a;
+            animation: pulse 1s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
         .preview {
             flex: 1;
             background: #1e1e1e;
@@ -430,6 +628,7 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
                 <div class="controls">
                     <button id="connectBtn" onclick="connect()">Connect VNC</button>
                     <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
+                    <button id="runAllBtn" onclick="executeAll()" disabled style="background: #2e7d32; margin-left: 10px;">▶ Run All</button>
                 </div>
             </div>
             
@@ -489,7 +688,10 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
             const select = document.getElementById('scenarioSelect');
             const value = select.value;
             
-            if (!value) return;
+            if (!value) {
+                document.getElementById('runAllBtn').disabled = true;
+                return;
+            }
             
             const [file, name] = value.split('|||');
             
@@ -498,6 +700,10 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
                 .then(data => {
                     if (data.success) {
                         displaySteps(data.steps);
+                        // Enable Run All button if connected
+                        if (connected) {
+                            document.getElementById('runAllBtn').disabled = false;
+                        }
                     }
                 });
         }
@@ -521,14 +727,81 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
                     <div class="step-number">Step ${index + 1}</div>
                     <div class="step-action">${action}</div>
                     ${details ? `<div class="step-details">${details}</div>` : ''}
+                    <button class="execute-btn" onclick="executeStep(${index})">▶ Execute</button>
                 `;
                 
                 container.appendChild(stepDiv);
             });
         }
         
+        function executeStep(stepIndex) {
+            fetch(`/api/execute_step/${stepIndex}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        // Highlight executed step
+                        document.querySelectorAll('.step').forEach(s => s.classList.remove('executing'));
+                        document.getElementById(`step-${stepIndex}`).classList.add('executing');
+                        
+                        console.log(`Executed step ${stepIndex + 1}`);
+                    } else {
+                        alert(`Error: ${data.error}`);
+                    }
+                })
+                .catch(err => {
+                    console.error('Execute error:', err);
+                    alert(`Failed to execute step: ${err}`);
+                });
+        }
+        
+        function executeAll() {
+            if (!confirm('Execute all steps in scenario?')) {
+                return;
+            }
+            
+            fetch('/api/execute_all')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('Scenario execution started');
+                        startStatusPolling();
+                    } else {
+                        alert(`Error: ${data.error}`);
+                    }
+                })
+                .catch(err => {
+                    console.error('Execute all error:', err);
+                    alert(`Failed to execute scenario: ${err}`);
+                });
+        }
+        
+        function startStatusPolling() {
+            const pollInterval = setInterval(() => {
+                fetch('/api/status')
+                    .then(r => r.json())
+                    .then(status => {
+                        // Update current step highlight
+                        document.querySelectorAll('.step').forEach(s => s.classList.remove('executing'));
+                        if (status.is_executing && status.current_step >= 0) {
+                            const stepEl = document.getElementById(`step-${status.current_step}`);
+                            if (stepEl) {
+                                stepEl.classList.add('executing');
+                                stepEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                            }
+                        }
+                        
+                        // Stop polling when done
+                        if (!status.is_executing) {
+                            clearInterval(pollInterval);
+                        }
+                    })
+                    .catch(err => console.error('Status poll error:', err));
+            }, 500);  // Poll every 500ms
+        }
+        
         function connect() {
-            document.getElementById('spinner').style.display = 'block';
+            const spinner = document.getElementById('spinner');
+            if (spinner) spinner.style.display = 'block';
             
             fetch('/api/connect')
                 .then(r => r.json())
@@ -540,11 +813,18 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
                         document.getElementById('status').className = 'status connected';
                         document.getElementById('status').textContent = 'Status: Connected ✓';
                         
+                        // Enable Run All if scenario loaded
+                        const scenarioSelect = document.getElementById('scenarioSelect');
+                        if (scenarioSelect.value) {
+                            document.getElementById('runAllBtn').disabled = false;
+                        }
+                        
                         startLivePreview();
                     }
                 })
                 .finally(() => {
-                    document.getElementById('spinner').style.display = 'none';
+                    const spinner = document.getElementById('spinner');
+                    if (spinner) spinner.style.display = 'none';
                 });
         }
         
@@ -554,6 +834,7 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
                     connected = false;
                     document.getElementById('connectBtn').disabled = false;
                     document.getElementById('disconnectBtn').disabled = true;
+                    document.getElementById('runAllBtn').disabled = true;
                     document.getElementById('status').className = 'status disconnected';
                     document.getElementById('status').textContent = 'Status: Disconnected';
                     

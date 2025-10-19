@@ -6,9 +6,16 @@
 - 📋 **Lista kroków scenariusza** (po lewej)
 - 📺 **Live VNC preview** (po prawej)
 - 🔄 **Real-time updates** (co 1 sekundę)
+- ▶️ **Execute buttons** - Wykonuj kroki pojedynczo lub wszystkie naraz!
+
+**Nowe funkcje:**
+- ✅ Wykonywanie pojedynczego kroku po kliknięciu
+- ✅ Przycisk "Run All" - wykonaj cały scenariusz
+- ✅ Real-time highlight aktualnie wykonywanego kroku
+- ✅ Automatyczne odświeżanie screenshota podczas wykonywania
 
 **Używaj podczas:**
-- Debugowania scenariuszy
+- Debugowania scenariuszy (wykonuj krok po kroku!)
 - Tworzenia nowych testów
 - Demonstracji automatyzacji
 - Monitorowania długich testów
@@ -41,7 +48,10 @@ http://localhost:5000
 
 1. **Connect VNC** - Kliknij przycisk "Connect VNC"
 2. **Select Scenario** - Wybierz scenariusz z dropdown
-3. **Watch Live** - Zobacz live automation!
+3. **Execute Steps:**
+   - **Single Step:** Kliknij "▶ Execute" przy wybranym kroku
+   - **All Steps:** Kliknij "▶ Run All" w headerze
+4. **Watch Live** - Zobacz live execution z real-time preview!
 
 ---
 
@@ -62,31 +72,41 @@ http://localhost:5000
 │             │    Updates every 1s       │
 │  Step List  │                           │
 │             │                           │
-│  ├ Step 1   │                           │
-│  │  connect │                           │
-│  ├ Step 2   │                           │
-│  │  wait    │                           │
-│  └ Step 3   │                           │
-│     cv_detect                           │
-│             │                           │
-└─────────────┴───────────────────────────┘
+│  ├ Step 1    │                          │
+│  │  connect  │                          │
+│  │  [▶ Execute]                         │
+│  ├ Step 2    │                          │
+│  │  wait     │                          │
+│  │  [▶ Execute]                         │
+│  └ Step 3    │                          │
+│     cv_detect│                          │
+│     [▶ Execute]                         │
+│              │                          │
+└──────────────┴──────────────────────────┘
 ```
 
 ### Features
 
 **Lewa Strona (Sidebar):**
+- **Header Controls:**
+  - "Connect VNC" - Połącz z VNC desktop
+  - "Disconnect" - Rozłącz  
+  - "▶ Run All" - Wykonaj wszystkie kroki (NOWE!)
 - Dropdown ze wszystkimi scenariuszami
-- Lista kroków scenariusza
+- **Lista kroków scenariusza**
 - Każdy krok pokazuje:
   - Numer kroku
   - Akcję (connect, click, type, etc.)
   - Parametry (text, position, etc.)
-- Active step podświetlony
+  - **Przycisk "▶ Execute"** - Wykonaj ten krok! (NOWE!)
+- **Executing step podświetlony** na pomarańczowo z animacją (NOWE!)
+- Active step podświetlony na niebiesko
 - Completed steps wyszarzone
 
 **Prawa Strona (Preview):**
 - Live screenshot z VNC
-- Odświeżanie co 1 sekundę
+- **Automatyczne odświeżanie** podczas wykonywania (NOWE!)
+- Odświeżanie co 1 sekundę  
 - Status połączenia
 - Full-size preview
 
@@ -109,7 +129,52 @@ Monitor automatycznie ładuje wszystkie scenariusze z:
 
 ## 🎯 Praktyczne Przykłady
 
-### Przykład 1: Monitoruj CV Detection
+### Przykład 1: Wykonuj Kroki Pojedynczo (Debug Mode!)
+
+```bash
+# Terminal: Uruchom monitor
+make live-monitor
+
+# Browser:
+http://localhost:5000
+
+# W interface:
+1. Click "Connect VNC"
+2. Select: "cv_speed_test.yaml → cv_fast_detection"
+3. Kliknij "▶ Execute" przy Step 1 (connect)
+   → Zobacz połączenie z VNC
+4. Kliknij "▶ Execute" przy Step 3 (cv_detect)
+   → Zobacz detekcję w milisekundach!
+5. Sprawdź inne kroki pojedynczo
+```
+
+**Korzyści:**
+- 🐛 **Debug step-by-step** - Zobacz dokładnie co robi każdy krok
+- ⏸️ **Pause między krokami** - Analizuj wyniki
+- 🔍 **Testuj pojedyncze akcje** - Bez uruchamiania całego scenariusza
+
+### Przykład 2: Wykonaj Cały Scenariusz (Run All)
+
+```bash
+# Monitor
+make live-monitor
+
+# Select scenario:
+"auto_login.yaml → cv_fast_login"
+
+# Click "▶ Run All"
+
+# Watch automation execute automatically!
+```
+
+**Zobaczysz:**
+- Step 1 podświetlony → connecting...
+- Step 2 podświetlony → detecting...
+- Step 3 podświetlony → typing...
+- Step 4 podświetlony → clicking unlock...
+- Każdy krok z live preview po prawej! 📺
+
+### Przykład 3: Monitoruj CV Detection
 
 ```bash
 # Terminal 1: Uruchom monitor

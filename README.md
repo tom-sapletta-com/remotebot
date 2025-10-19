@@ -61,7 +61,7 @@ make list-cv-tests
 
 **Zobacz:** [CV_DETECTION_GUIDE.md](CV_DETECTION_GUIDE.md) - Pełna dokumentacja
 
-### 🎬 Live Monitor - Real-Time Web Interface (NOWE!)
+### 🎬 Live Monitor - Interactive Web Interface (NOWE!)
 ```bash
 # Uruchom web monitoring z live preview
 make live-monitor
@@ -73,11 +73,15 @@ http://localhost:5000
 **Features:**
 - 📋 Lista kroków scenariusza (po lewej)
 - 📺 Live VNC preview (po prawej) 
-- 🔄 Real-time updates (1 FPS)
+- ▶️ **Przyciski Execute** - Wykonuj kroki pojedynczo! (NOWE!)
+- 🎬 **Przycisk "Run All"** - Wykonaj cały scenariusz! (NOWE!)
+- 🔄 Real-time updates podczas wykonywania
 - 🎯 Wszystkie scenariusze dostępne
-- 🐛 Perfect dla debugowania
+- 🐛 Perfect dla debugowania step-by-step
 
-**Zobacz:** [LIVE_MONITOR_GUIDE.md](LIVE_MONITOR_GUIDE.md) - Pełna dokumentacja
+**Zobacz:** 
+- [TEST_LIVE_MONITOR.md](TEST_LIVE_MONITOR.md) - Quick test guide
+- [LIVE_MONITOR_GUIDE.md](LIVE_MONITOR_GUIDE.md) - Pełna dokumentacja
 
 ### 📚 Dokumentacja (Przeczytaj w tej kolejności)
 1. **[START_HERE.md](START_HERE.md)** ⭐ - Zacznij tu! (3 min)
