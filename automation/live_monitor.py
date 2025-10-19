@@ -1107,8 +1107,8 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
                     if (data.success && data.logs) {
                         // Format logs as text
                         const logsText = data.logs.map(log => 
-                            `[${log.timestamp}] [${log.level.toUpperCase()}] ${log.message}`
-                        ).join('\n');
+                            '[' + log.timestamp + '] [' + log.level.toUpperCase() + '] ' + log.message
+                        ).join('\\n');
                         
                         // Copy to clipboard
                         navigator.clipboard.writeText(logsText)
