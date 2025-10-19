@@ -41,6 +41,24 @@ monitoring_active = False
 automation_engine = None
 execution_lock = Lock()
 is_executing = False
+log_buffer = []  # Store last 100 logs
+log_lock = Lock()
+MAX_LOGS = 100
+
+def add_log(level, message):
+    """Add log entry to buffer"""
+    global log_buffer
+    with log_lock:
+        timestamp = time.strftime('%H:%M:%S')
+        log_entry = {
+            'timestamp': timestamp,
+            'level': level,  # info, success, error, warning
+            'message': message
+        }
+        log_buffer.append(log_entry)
+        if len(log_buffer) > MAX_LOGS:
+            log_buffer.pop(0)
+        print(f"[{timestamp}] [{level.upper()}] {message}")
 
 def load_scenario(yaml_path: str, scenario_name: str):
     """Load scenario from YAML file"""
@@ -167,9 +185,11 @@ def connect_vnc():
     global live_controller, monitoring_active
     
     if not REMOTE_AVAILABLE:
+        add_log('error', 'Remote automation not available')
         return jsonify({'success': False, 'error': 'Remote automation not available'}), 500
     
     try:
+        add_log('info', 'Connecting to VNC desktop...')
         live_controller = RemoteController(
             protocol='vnc',
             host='vnc-desktop',
@@ -183,8 +203,11 @@ def connect_vnc():
         thread = Thread(target=screenshot_worker, daemon=True)
         thread.start()
         
+        add_log('success', 'Connected to VNC successfully!')
         return jsonify({'success': True, 'message': 'Connected to VNC'})
     except Exception as e:
+        add_log('error', f'Connection failed: {str(e)}')
+        traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/disconnect')
@@ -192,6 +215,7 @@ def disconnect_vnc():
     """Disconnect from VNC"""
     global live_controller, monitoring_active
     
+    add_log('info', 'Disconnecting from VNC...')
     monitoring_active = False
     
     if live_controller:
@@ -201,22 +225,28 @@ def disconnect_vnc():
             pass
         live_controller = None
     
+    add_log('success', 'Disconnected from VNC')
     return jsonify({'success': True, 'message': 'Disconnected'})
 
 @app.route('/api/screenshot')
 def get_screenshot():
-    """Get latest screenshot as base64"""
+    """Get latest screenshot as base64 (deprecated - use /video_feed instead)"""
     global live_screenshot, screenshot_lock
     
-    with screenshot_lock:
-        if live_screenshot:
-            img_base64 = base64.b64encode(live_screenshot).decode('utf-8')
-            return jsonify({
-                'success': True,
-                'image': f'data:image/jpeg;base64,{img_base64}'
-            })
-    
-    return jsonify({'success': False, 'error': 'No screenshot available'}), 404
+    try:
+        with screenshot_lock:
+            if live_screenshot and len(live_screenshot) > 0:
+                img_base64 = base64.b64encode(live_screenshot).decode('utf-8')
+                return jsonify({
+                    'success': True,
+                    'image': f'data:image/jpeg;base64,{img_base64}'
+                })
+        
+        return jsonify({'success': False, 'error': 'No screenshot available'}), 404
+    except Exception as e:
+        print(f"[Monitor] Error in get_screenshot: {e}")
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/video_feed')
 def video_feed():
@@ -246,6 +276,25 @@ def get_status():
         'is_executing': is_executing
     })
 
+@app.route('/api/logs')
+def get_logs():
+    """Get recent logs"""
+    global log_buffer
+    with log_lock:
+        return jsonify({
+            'success': True,
+            'logs': log_buffer.copy()
+        })
+
+@app.route('/api/logs/clear')
+def clear_logs():
+    """Clear log buffer"""
+    global log_buffer
+    with log_lock:
+        log_buffer.clear()
+    add_log('info', 'Logs cleared')
+    return jsonify({'success': True})
+
 @app.route('/api/execute_step/<int:step_index>')
 def execute_step(step_index):
     """Execute specific step"""
@@ -271,17 +320,16 @@ def execute_step(step_index):
         # Initialize engine if not exists
         if not automation_engine:
             try:
-                print(f"[Monitor] Initializing automation engine...")
+                add_log('info', 'Initializing automation engine...')
                 ollama_config = scenario_config.get('ollama', {})
-                print(f"[Monitor] Ollama config: {ollama_config}")
                 vision = OllamaVision(
                     base_url=ollama_config.get('url', 'http://ollama:11434'),
                     model=ollama_config.get('model', 'llava:7b')
                 )
                 automation_engine = AutomationEngine(live_controller, vision, enable_recording=False)
-                print(f"[Monitor] Automation engine initialized successfully")
+                add_log('success', 'Automation engine initialized')
             except Exception as e:
-                print(f"[Monitor] Failed to initialize automation engine: {e}")
+                add_log('error', f'Failed to initialize engine: {str(e)}')
                 traceback.print_exc()
                 return jsonify({
                     'success': False,
@@ -291,14 +339,14 @@ def execute_step(step_index):
         
         # Execute single step
         step = scenario_steps[step_index]
+        action = step.get('action', 'unknown')
         
-        print(f"[Monitor] Executing step {step_index + 1}: {step.get('action', 'unknown')}")
-        print(f"[Monitor] Step details: {step}")
+        add_log('info', f'Executing step {step_index + 1}: {action}')
         
         try:
             # Execute the step
             automation_engine.execute_steps([step])
-            print(f"[Monitor] Step {step_index + 1} executed successfully")
+            add_log('success', f'Step {step_index + 1} completed: {action}')
             
             # Capture screenshot after execution
             time.sleep(0.5)
@@ -310,7 +358,7 @@ def execute_step(step_index):
                 'step': step
             })
         except Exception as e:
-            print(f"[Monitor] Error executing step: {e}")
+            add_log('error', f'Step {step_index + 1} failed: {str(e)}')
             traceback.print_exc()
             return jsonify({
                 'success': False,
@@ -319,7 +367,7 @@ def execute_step(step_index):
             }), 500
     
     except Exception as e:
-        print(f"[Monitor] Unexpected error in execute_step: {e}")
+        add_log('error', f'Unexpected error: {str(e)}')
         traceback.print_exc()
         return jsonify({
             'success': False,
@@ -354,30 +402,37 @@ def execute_all():
         global current_step, is_executing, automation_engine
         
         try:
+            add_log('info', f'Starting scenario: {current_scenario}')
+            
             # Initialize engine if not exists
             if not automation_engine:
+                add_log('info', 'Initializing automation engine...')
                 ollama_config = scenario_config.get('ollama', {})
                 vision = OllamaVision(
                     base_url=ollama_config.get('url', 'http://ollama:11434'),
                     model=ollama_config.get('model', 'llava:7b')
                 )
                 automation_engine = AutomationEngine(live_controller, vision, enable_recording=False)
+                add_log('success', 'Automation engine initialized')
             
             # Execute all steps
             for i, step in enumerate(scenario_steps):
                 current_step = i
-                print(f"[Monitor] Executing step {i + 1}/{len(scenario_steps)}: {step.get('action', 'unknown')}")
+                action = step.get('action', 'unknown')
+                add_log('info', f'Step {i + 1}/{len(scenario_steps)}: {action}')
                 
                 automation_engine.execute_steps([step])
+                add_log('success', f'Step {i + 1} completed')
                 
                 # Capture screenshot after each step
                 time.sleep(0.5)
                 capture_vnc_screenshot()
             
-            print(f"[Monitor] Scenario completed!")
+            add_log('success', f'Scenario completed! {len(scenario_steps)} steps executed')
             
         except Exception as e:
-            print(f"[Monitor] Error executing scenario: {e}")
+            add_log('error', f'Scenario execution failed: {str(e)}')
+            traceback.print_exc()
         
         finally:
             is_executing = False
@@ -411,12 +466,12 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
         }
         
         .container {
-            display: flex;
+            display: grid;
+            grid-template-columns: 400px 1fr 350px;
             height: 100vh;
         }
         
         .sidebar {
-            width: 400px;
             background: #252526;
             border-right: 1px solid #3e3e42;
             display: flex;
@@ -618,6 +673,93 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        /* Log Panel */
+        .log-panel {
+            background: #1e1e1e;
+            border-left: 1px solid #3e3e42;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .log-header {
+            padding: 15px;
+            background: #2d2d30;
+            border-bottom: 1px solid #3e3e42;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .log-header h2 {
+            font-size: 14px;
+            color: #4fc3f7;
+        }
+        
+        .log-header button {
+            padding: 5px 10px;
+            background: #3e3e42;
+            color: #e0e0e0;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        
+        .log-header button:hover {
+            background: #4e4e52;
+        }
+        
+        .log-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        
+        .log-entry {
+            padding: 6px 10px;
+            margin-bottom: 2px;
+            border-left: 3px solid transparent;
+            border-radius: 2px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .log-entry .timestamp {
+            color: #858585;
+            min-width: 70px;
+        }
+        
+        .log-entry .message {
+            flex: 1;
+            word-wrap: break-word;
+        }
+        
+        .log-entry.info {
+            border-left-color: #4fc3f7;
+            background: #1a2832;
+        }
+        
+        .log-entry.success {
+            border-left-color: #4caf50;
+            background: #1a2819;
+            color: #81c784;
+        }
+        
+        .log-entry.error {
+            border-left-color: #f44336;
+            background: #321a1a;
+            color: #ef5350;
+        }
+        
+        .log-entry.warning {
+            border-left-color: #ff9800;
+            background: #322a1a;
+            color: #ffb74d;
+        }
     </style>
 </head>
 <body>
@@ -662,6 +804,19 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
                     <h3>No VNC Connection</h3>
                     <p>Click "Connect VNC" to start monitoring</p>
                     <div class="spinner" style="display: none;" id="spinner"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="log-panel">
+            <div class="log-header">
+                <h2>📋 Execution Logs</h2>
+                <button onclick="clearLogs()">Clear</button>
+            </div>
+            <div class="log-content" id="logContent">
+                <div class="log-entry info">
+                    <span class="timestamp">--:--:--</span>
+                    <span class="message">Waiting for connection...</span>
                 </div>
             </div>
         </div>
@@ -844,38 +999,99 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
         
         function startLivePreview() {
             const preview = document.getElementById('previewContent');
-            preview.innerHTML = '<img id="liveImage" src="" alt="VNC Preview">';
-            
-            updateInterval = setInterval(updateScreenshot, 1000);
-            updateScreenshot();
+            // Use video feed instead of polling for better performance
+            preview.innerHTML = '<img id="liveImage" src="/video_feed" alt="VNC Preview" style="width: 100%; height: auto;">';
         }
         
         function stopLivePreview() {
-            if (updateInterval) {
-                clearInterval(updateInterval);
-                updateInterval = null;
+            const preview = document.getElementById('previewContent');
+            if (preview) {
+                preview.innerHTML = `
+                    <div class="no-preview">
+                        <h3>Disconnected</h3>
+                        <p>Connect to VNC to see live preview</p>
+                    </div>
+                `;
             }
-            
-            document.getElementById('previewContent').innerHTML = `
-                <div class="no-preview">
-                    <h3>Disconnected</h3>
-                    <p>Connect to VNC to see live preview</p>
-                </div>
-            `;
         }
         
         function updateScreenshot() {
-            if (!connected) return;
+            // No longer needed - using video feed instead
+            console.log('[Monitor] Using video feed for live preview');
+        }
+        
+        // Log Management
+        let logPollInterval = null;
+        
+        function startLogPolling() {
+            if (logPollInterval) return;
             
-            fetch('/api/screenshot')
+            updateLogs();  // Initial update
+            logPollInterval = setInterval(updateLogs, 1000);  // Poll every second
+        }
+        
+        function stopLogPolling() {
+            if (logPollInterval) {
+                clearInterval(logPollInterval);
+                logPollInterval = null;
+            }
+        }
+        
+        function updateLogs() {
+            fetch('/api/logs')
                 .then(r => r.json())
                 .then(data => {
-                    if (data.success) {
-                        document.getElementById('liveImage').src = data.image;
+                    if (data.success && data.logs) {
+                        displayLogs(data.logs);
                     }
                 })
-                .catch(err => console.error('Screenshot update error:', err));
+                .catch(err => console.error('Log update error:', err));
         }
+        
+        function displayLogs(logs) {
+            const container = document.getElementById('logContent');
+            if (!logs || logs.length === 0) {
+                container.innerHTML = `
+                    <div class="log-entry info">
+                        <span class="timestamp">--:--:--</span>
+                        <span class="message">No logs yet...</span>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = logs.map(log => `
+                <div class="log-entry ${log.level}">
+                    <span class="timestamp">${log.timestamp}</span>
+                    <span class="message">${escapeHtml(log.message)}</span>
+                </div>
+            `).join('');
+            
+            // Auto-scroll to bottom
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        function clearLogs() {
+            fetch('/api/logs/clear')
+                .then(() => updateLogs())
+                .catch(err => console.error('Clear logs error:', err));
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Start log polling when page loads
+        window.addEventListener('load', () => {
+            startLogPolling();
+        });
+        
+        // Stop log polling when page unloads
+        window.addEventListener('beforeunload', () => {
+            stopLogPolling();
+        });
     </script>
 </body>
 </html>'''
@@ -889,4 +1105,5 @@ if __name__ == '__main__':
     print("🎬 Starting Live Automation Monitor...")
     print("📺 Open: http://localhost:5000")
     print("")
+    add_log('info', 'Live Monitor started - Ready for connections')
     app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
